@@ -1,0 +1,992 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+/* ─── Detail Layout ─────────────────────────────────────── */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 760px) {
+    .detail-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── Photo Panel ───────────────────────────────────────── */
+.photo-panel {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: calc(var(--header-h) + var(--desktop-nav-h) + 1.25rem);
+}
+
+@media (max-width: 760px) {
+    .photo-panel { position: static; }
+}
+
+.photo-zone {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 60%, #6ee7b7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.photo-zone img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-zone .ph-icon {
+    font-size: 5rem;
+    opacity: 0.4;
+}
+
+/* Photo actions bar */
+.photo-actions {
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.photo-actions-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* ─── Info Panel ─────────────────────────────────────────── */
+.info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+/* ─── Plant Header Card ──────────────────────────────────── */
+.plant-hd-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.plant-name-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.plant-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-1);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    flex: 1;
+}
+
+.species-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--green-50);
+    border: 1px solid var(--green-200);
+    color: #15803d;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.species-pill.unknown {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-3);
+}
+
+.confidence-pill {
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid transparent;
+}
+
+.confidence-pill.high   { background: var(--green-50);  color: #15803d; border-color: var(--green-200); }
+.confidence-pill.medium { background: var(--amber-50);  color: #92400e; border-color: var(--amber-200); }
+.confidence-pill.low    { background: var(--red-50);    color: #991b1b; border-color: var(--red-200); }
+
+.species-thai {
+    font-size: 0.82rem;
+    color: var(--text-3);
+    margin-top: 0.1rem;
+    margin-bottom: 0.6rem;
+}
+
+/* Feature status bar */
+.feature-bar {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+
+/* Meta items */
+.meta-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+}
+
+.meta-item { display: flex; flex-direction: column; gap: 0.15rem; }
+
+.meta-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+}
+
+.meta-value {
+    font-size: 0.875rem;
+    color: var(--text-2);
+}
+
+/* ─── Sensor Readings Card ───────────────────────────────── */
+.sensor-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.sensor-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+}
+
+.sensor-hd-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+}
+
+.sensor-ts {
+    font-size: 0.72rem;
+    color: var(--text-3);
+}
+
+.readings-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+    .readings-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+}
+
+.reading-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 0.875rem 0.75rem;
+    text-align: center;
+}
+
+.reading-icon { font-size: 1.3rem; display: block; margin-bottom: 0.35rem; }
+.reading-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-1);
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+.reading-unit  { font-size: 0.7rem; color: var(--text-3); margin-top: 0.15rem; }
+.reading-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.3rem;
+}
+
+.reading-value.good    { color: var(--green); }
+.reading-value.warn    { color: var(--amber); }
+.reading-value.danger  { color: var(--red); }
+
+.no-sensor {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-3);
+    font-size: 0.875rem;
+}
+
+/* ─── Health Score Card ──────────────────────────────────── */
+.health-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.health-gauge { flex-shrink: 0; text-align: center; }
+
+.health-info { flex: 1; min-width: 180px; }
+
+.health-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+    margin-bottom: 0.35rem;
+}
+
+.health-summary {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    line-height: 1.55;
+    margin-bottom: 0.75rem;
+}
+
+.health-link {
+    font-size: 0.8rem;
+    color: var(--green);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.health-link:hover { color: var(--green-hover); }
+
+/* ─── Care Guide Card ────────────────────────────────────── */
+.care-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.care-card-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    gap: 0.75rem;
+}
+
+.care-card-hd:hover { background: var(--surface-2); }
+
+.care-hd-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.care-hd-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+}
+
+.care-species-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-1);
+}
+
+.care-toggle-icon {
+    color: var(--text-3);
+    font-size: 0.75rem;
+    transition: transform 0.2s;
+}
+
+.care-card.collapsed .care-toggle-icon { transform: rotate(-90deg); }
+
+.care-body {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.care-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 560px) { .care-grid { grid-template-columns: 1fr; } }
+
+.care-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 0.75rem 0.875rem;
+}
+
+.care-item-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    margin-bottom: 0.3rem;
+}
+
+.care-item-value {
+    font-size: 0.84rem;
+    color: var(--text-2);
+    line-height: 1.45;
+}
+
+.care-item.full { grid-column: 1 / -1; }
+
+/* ─── Actions Card ───────────────────────────────────────── */
+.actions-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.btn-identify { min-width: 170px; }
+.btn-identify.loading { opacity: 0.65; pointer-events: none; }
+
+.btn-danger { background: var(--red-50); color: var(--red); border: 1.5px solid var(--red-200); }
+.btn-danger:hover { background: #fde8e8; border-color: var(--red); }
+
+/* ─── Delete Confirm Modal ───────────────────────────────── */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.65);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-backdrop.open { display: flex; }
+
+.modal {
+    background: var(--surface);
+    border-radius: var(--r-xl);
+    padding: 2rem;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(239,68,68,0.15);
+    border: 1px solid var(--red-200);
+    animation: modal-in 0.18s ease;
+}
+
+@keyframes modal-in {
+    from { transform: scale(0.95); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+.modal-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--red-50);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+}
+
+.modal-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-1);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.modal-body {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+}
+
+.modal-plant-name {
+    font-weight: 700;
+    color: var(--text-1);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xs);
+    padding: 0.1rem 0.45rem;
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 0.875rem;
+}
+
+.modal-input-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 0.65rem 0.875rem;
+    border-radius: var(--r-sm);
+    border: 1.5px solid var(--border);
+    font-size: 0.875rem;
+    font-family: inherit;
+    background: var(--surface);
+    color: var(--text-1);
+    margin-bottom: 1.25rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+}
+
+.modal-input.matched {
+    border-color: var(--red);
+    background: #fff8f8;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.btn-delete-confirm {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.btn-delete-confirm:hover:not(:disabled) {
+    background: #b91c1c;
+    box-shadow: 0 2px 10px rgba(220,38,38,0.35);
+}
+
+.btn-delete-confirm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ─── Chart card ─────────────────────────────────────────── */
+.chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    margin-top: 1.25rem;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <a href="/catalog">Catalog</a>
+    <span class="sep">›</span>
+    <span>{{ plant.name }}</span>
+</div>
+
+{% if error %}
+<div class="alert alert-error">⚠ {{ error }}</div>
+{% endif %}
+{% if success %}
+<div class="alert alert-success">✓ {{ success }}</div>
+{% endif %}
+
+<div class="detail-grid">
+
+    <!-- ── Left: Photo Panel ──────────────────────────────── -->
+    <div class="photo-panel">
+        <div class="photo-zone">
+            {% if plant.image_path %}
+                <img src="/media/{{ plant.image_path }}" alt="{{ plant.name }}">
+            {% else %}
+                <span class="ph-icon">🌿</span>
+            {% endif %}
+        </div>
+        <div class="photo-actions">
+            <p class="photo-actions-title">Plant Photo</p>
+            <form action="/catalog/{{ plant.id }}/image" method="post"
+                  enctype="multipart/form-data" class="upload-form">
+                <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp" required>
+                <button type="submit" class="btn btn-green btn-full">
+                    {{ '↑ Replace Photo' if plant.image_path else '↑ Upload Photo' }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Right: Info Panel ─────────────────────────────── -->
+    <div class="info-panel">
+
+        <!-- Plant header -->
+        <div class="plant-hd-card">
+            <div class="plant-name-row">
+                <h1 class="plant-title">{{ plant.name }}</h1>
+            </div>
+
+            {% if plant.species %}
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem;">
+                <span class="species-pill{% if plant.species == 'Unknown' %} unknown{% endif %}">
+                    🔬 {{ plant.species }}
+                </span>
+                {% if plant.confidence %}
+                <span class="confidence-pill {{ plant.confidence | lower }}">
+                    {{ plant.confidence }} confidence
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if plant.species_thai and plant.species != 'Unknown' %}
+            <div class="species-thai">{{ plant.species_thai }}</div>
+            {% endif %}
+
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">Device ID</span>
+                    <span class="meta-value mono">{{ plant.device_id }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Registered</span>
+                    <span class="meta-value">{{ plant.created_at.strftime('%b %d, %Y') }}</span>
+                </div>
+                {% if plant.species_identified_at %}
+                <div class="meta-item">
+                    <span class="meta-label">Species ID</span>
+                    <span class="meta-value">{{ plant.species_identified_at.strftime('%b %d, %Y') }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Feature status chips -->
+            <div class="feature-bar">
+                {% if plant.image_path %}
+                <span class="chip chip-green" title="Profile photo uploaded">📷 Photo</span>
+                {% else %}
+                <span class="chip chip-gray" title="No profile photo">📷 No Photo</span>
+                {% endif %}
+
+                {% if plant.species and plant.species != 'Unknown' %}
+                <span class="chip chip-green" title="Species identified">🔬 {{ plant.confidence or 'Identified' }}</span>
+                {% elif plant.species == 'Unknown' %}
+                <span class="chip chip-amber" title="Species unknown">🔬 Unknown</span>
+                {% else %}
+                <span class="chip chip-gray" title="Species not identified">🔬 Unidentified</span>
+                {% endif %}
+
+                {% if latest %}
+                <span class="chip chip-green" title="Sensor data active">📡 Live Sensor</span>
+                {% else %}
+                <span class="chip chip-gray" title="No sensor data">📡 No Sensor</span>
+                {% endif %}
+
+                {% if latest_health %}
+                {% set hs = latest_health.health_score %}
+                {% if hs >= 70 %}
+                <span class="chip chip-green">❤ Health {{ hs }}</span>
+                {% elif hs >= 40 %}
+                <span class="chip chip-amber">❤ Health {{ hs }}</span>
+                {% else %}
+                <span class="chip chip-red">❤ Health {{ hs }}</span>
+                {% endif %}
+                {% else %}
+                <span class="chip chip-gray" title="No health check done">❤ No Analysis</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Latest sensor readings -->
+        <div class="sensor-card">
+            <div class="sensor-hd">
+                <span class="sensor-hd-title">Live Readings</span>
+                {% if latest %}
+                <span class="sensor-ts">{{ latest.timestamp.strftime('%b %d · %H:%M') }}</span>
+                {% endif %}
+            </div>
+
+            {% if latest %}
+            <div class="readings-grid">
+                <!-- Temperature -->
+                <div class="reading-item">
+                    <span class="reading-icon">🌡️</span>
+                    {% if latest.temperature is not none %}
+                    {% set temp = latest.temperature %}
+                    <div class="reading-value{% if temp > 35 or temp < 10 %} danger{% elif temp > 30 or temp < 15 %} warn{% else %} good{% endif %}">
+                        {{ "%.1f"|format(temp) }}
+                    </div>
+                    <div class="reading-unit">°C</div>
+                    {% else %}
+                    <div class="reading-value" style="color:var(--border-strong)">—</div>
+                    {% endif %}
+                    <div class="reading-label">Temp</div>
+                </div>
+
+                <!-- Humidity -->
+                <div class="reading-item">
+                    <span class="reading-icon">💧</span>
+                    {% if latest.humidity is not none %}
+                    {% set hum = latest.humidity %}
+                    <div class="reading-value{% if hum < 30 or hum > 90 %} danger{% elif hum < 40 or hum > 80 %} warn{% else %} good{% endif %}">
+                        {{ "%.0f"|format(hum) }}
+                    </div>
+                    <div class="reading-unit">%</div>
+                    {% else %}
+                    <div class="reading-value" style="color:var(--border-strong)">—</div>
+                    {% endif %}
+                    <div class="reading-label">Humidity</div>
+                </div>
+
+                <!-- Soil Moisture -->
+                <div class="reading-item">
+                    <span class="reading-icon">🌱</span>
+                    {% if latest.soil_moisture is not none %}
+                    {% set soil = latest.soil_moisture %}
+                    <div class="reading-value{% if soil < 20 %} danger{% elif soil < 35 %} warn{% else %} good{% endif %}">
+                        {{ "%.0f"|format(soil) }}
+                    </div>
+                    <div class="reading-unit">%</div>
+                    {% else %}
+                    <div class="reading-value" style="color:var(--border-strong)">—</div>
+                    {% endif %}
+                    <div class="reading-label">Soil</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-sensor">
+                <span style="font-size:2rem;display:block;margin-bottom:0.5rem;">📡</span>
+                No sensor data received yet from <span class="mono">{{ plant.device_id }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Health score card -->
+        {% if latest_health %}
+        {% set hs = latest_health.health_score %}
+        {% if hs >= 90 %}{% set hc = "#22c55e" %}{% set hl = "Excellent" %}
+        {% elif hs >= 70 %}{% set hc = "#84cc16" %}{% set hl = "Good" %}
+        {% elif hs >= 50 %}{% set hc = "#eab308" %}{% set hl = "Fair" %}
+        {% elif hs >= 30 %}{% set hc = "#f97316" %}{% set hl = "Poor" %}
+        {% else %}{% set hc = "#ef4444" %}{% set hl = "Critical" %}{% endif %}
+
+        <div class="health-card">
+            <div class="health-gauge">
+                <svg viewBox="0 0 100 66" width="100" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 10 58 A 40 40 0 0 1 90 58" fill="none" stroke="#e2e8f0" stroke-width="10" stroke-linecap="round"/>
+                    <path d="M 10 58 A 40 40 0 0 1 90 58" fill="none" stroke="{{ hc }}" stroke-width="10" stroke-linecap="round"
+                          stroke-dasharray="{{ (hs / 100 * 125.66) | round(2) }} 200"/>
+                    <text x="50" y="53" text-anchor="middle" font-size="22" font-weight="800" fill="{{ hc }}"
+                          font-family="Inter,-apple-system,sans-serif">{{ hs }}</text>
+                </svg>
+                <div style="font-size:0.65rem;font-weight:800;color:{{ hc }};text-transform:uppercase;letter-spacing:0.07em;margin-top:-4px">{{ hl }}</div>
+            </div>
+            <div class="health-info">
+                <p class="health-label">Health Score</p>
+                <p class="health-summary">{{ latest_health.summary }}</p>
+                <a href="/catalog/{{ plant.id }}/health" class="health-link">
+                    View full history →
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Care guide -->
+        {% if plant.care_guide and plant.species != 'Unknown' %}
+        <div class="care-card" id="care-card">
+            <div class="care-card-hd" onclick="toggleCare()">
+                <div class="care-hd-left">
+                    <span class="care-hd-title">Care Guide</span>
+                    <span class="care-species-name">{{ plant.species }}</span>
+                    {% if plant.confidence %}
+                    <span class="confidence-pill {{ plant.confidence | lower }}" style="font-size:0.62rem;">{{ plant.confidence }}</span>
+                    {% endif %}
+                </div>
+                <span class="care-toggle-icon">▼</span>
+            </div>
+            <div class="care-body" id="care-body">
+                <div class="care-grid">
+                    {% for key, val in plant.care_guide.items() %}
+                    <div class="care-item{% if key == 'Common Issues' %} full{% endif %}">
+                        <div class="care-item-label">{{ key }}</div>
+                        <div class="care-item-value">{{ val }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="actions-card">
+            <a href="/catalog/{{ plant.id }}/health" class="btn btn-green">
+                🔍 Health Analysis
+            </a>
+
+            {% if plant.image_path %}
+            <form action="/catalog/{{ plant.id }}/identify-species" method="post" id="species-form">
+                <button type="submit" class="btn btn-blue btn-identify" id="species-btn">
+                    🔬 {{ 'Re-identify Species' if plant.species else 'Identify Species' }}
+                </button>
+            </form>
+            {% else %}
+            <span class="btn btn-ghost" style="opacity:0.45;cursor:not-allowed;" title="Upload a photo first">
+                🔬 Identify Species
+            </span>
+            {% endif %}
+
+            <a href="/catalog" class="btn btn-ghost">← Catalog</a>
+
+            <button class="btn btn-danger" style="margin-left:auto;"
+                    onclick="openDeleteModal()">
+                🗑 Delete Plant
+            </button>
+        </div>
+
+    </div><!-- /info-panel -->
+</div>
+
+<!-- ── Delete Confirmation Modal ─────────────────────────── -->
+<div class="modal-backdrop" id="delete-modal" onclick="handleBackdropClick(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-icon">🗑</div>
+        <h2 class="modal-title" id="modal-title">Delete Plant</h2>
+        <p class="modal-body">
+            This will permanently delete <span class="modal-plant-name">{{ plant.name }}</span>
+            along with all its health analyses and uploaded photos. This action cannot be undone.
+        </p>
+        <label class="modal-input-label" for="confirm-input">
+            Type the plant name to confirm
+        </label>
+        <input type="text"
+               id="confirm-input"
+               class="modal-input"
+               placeholder="{{ plant.name }}"
+               autocomplete="off"
+               oninput="checkConfirm(this.value)">
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+            <form action="/catalog/{{ plant.id }}/delete" method="post" id="delete-form">
+                <button type="submit" class="btn btn-delete-confirm"
+                        id="delete-confirm-btn" disabled>
+                    Delete Plant
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Sensor History Chart ────────────────────────────── -->
+<div class="chart-card">
+    <p class="card-hd" style="margin-bottom:0.75rem;">Sensor History — <span class="mono" style="font-size:0.8rem;text-transform:none;letter-spacing:0;">{{ plant.device_id }}</span></p>
+    {% if dashboard_data and dashboard_data.points %}
+    <canvas id="sensorChart" style="max-height:280px"></canvas>
+    {% else %}
+    <div style="text-align:center;color:var(--text-3);padding:2.5rem 0;font-size:0.9rem;">
+        <span style="font-size:2rem;display:block;margin-bottom:0.5rem;">📊</span>
+        No sensor history yet for this device.
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    // ── Delete modal ─────────────────────────────────────── //
+    const PLANT_NAME = {{ plant.name | tojson }};
+
+    function openDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.add('open');
+        // Reset state each open
+        const input = document.getElementById('confirm-input');
+        input.value = '';
+        input.classList.remove('matched');
+        document.getElementById('delete-confirm-btn').disabled = true;
+        setTimeout(() => input.focus(), 50);
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('delete-modal').classList.remove('open');
+    }
+
+    function handleBackdropClick(e) {
+        if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
+    }
+
+    function checkConfirm(value) {
+        const btn   = document.getElementById('delete-confirm-btn');
+        const input = document.getElementById('confirm-input');
+        const match = value === PLANT_NAME;
+        btn.disabled = !match;
+        input.classList.toggle('matched', match);
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeDeleteModal();
+    });
+
+    // ── Care guide toggle ─────────────────────────────────── //
+    function toggleCare() {
+        const card = document.getElementById('care-card');
+        const body = document.getElementById('care-body');
+        if (!card) return;
+        card.classList.toggle('collapsed');
+        body.style.display = card.classList.contains('collapsed') ? 'none' : '';
+    }
+
+    // Identify species loading state
+    const speciesForm = document.getElementById('species-form');
+    if (speciesForm) {
+        speciesForm.addEventListener('submit', function() {
+            const btn = document.getElementById('species-btn');
+            btn.textContent = '⏳ Identifying…';
+            btn.classList.add('loading');
+        });
+    }
+</script>
+
+{% if dashboard_data and dashboard_data.points %}
+<script>
+const ctx = document.getElementById('sensorChart').getContext('2d');
+const labels = [{% for p in dashboard_data.points %}"{{ p.timestamp.strftime('%m-%d %H:%M') }}",{% endfor %}];
+const tempData  = [{% for p in dashboard_data.points %}{{ p.temperature if p.temperature is not none else 'null' }},{% endfor %}];
+const humData   = [{% for p in dashboard_data.points %}{{ p.humidity if p.humidity is not none else 'null' }},{% endfor %}];
+const soilData  = [{% for p in dashboard_data.points %}{{ p.soil_moisture if p.soil_moisture is not none else 'null' }},{% endfor %}];
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels,
+        datasets: [
+            {
+                label: 'Temp (°C)',
+                data: tempData,
+                borderColor: '#f97316',
+                backgroundColor: 'rgba(249,115,22,0.07)',
+                borderWidth: 2,
+                tension: 0.4,
+                pointRadius: 0,
+                fill: true,
+            },
+            {
+                label: 'Humidity (%)',
+                data: humData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.06)',
+                borderWidth: 2,
+                tension: 0.4,
+                pointRadius: 0,
+                fill: true,
+            },
+            {
+                label: 'Soil (%)',
+                data: soilData,
+                borderColor: '#16a34a',
+                backgroundColor: 'rgba(22,163,74,0.07)',
+                borderWidth: 2,
+                tension: 0.4,
+                pointRadius: 0,
+                fill: true,
+            },
+        ],
+    },
+    options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { position: 'top', labels: { font: { family: 'Inter', size: 12 }, usePointStyle: true, pointStyleWidth: 8 } },
+        },
+        scales: {
+            x: {
+                ticks: { maxTicksLimit: 8, font: { size: 11 }, color: '#94a3b8' },
+                grid: { color: '#f1f5f9' },
+            },
+            y: {
+                ticks: { font: { size: 11 }, color: '#94a3b8' },
+                grid: { color: '#f1f5f9' },
+            },
+        },
+    },
+});
+</script>
+{% endif %}
+{% endblock %}

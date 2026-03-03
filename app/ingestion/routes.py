@@ -1,0 +1,39 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.ingestion.schemas import (
+    SensorIngestRequest,
+    SensorIngestResponse,
+)
+from app.ingestion.service import IngestionService
+from app.ingestion.exceptions import (
+    DeviceNotAuthorized,
+    InvalidSensorPayload,
+)
+from app.api.deps import get_ingestion_service, get_api_key
+
+
+router = APIRouter(prefix="/api", tags=["Ingestion"])
+
+
+@router.post(
+    "/ingest",
+    response_model=SensorIngestResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def ingest_sensor_data(
+    payload: SensorIngestRequest,
+    api_key: str = Depends(get_api_key),
+    service: IngestionService = Depends(get_ingestion_service),
+) -> SensorIngestResponse:
+    """
+    Receive sensor data from ESP32 devices.
+
+    Header required:
+        X-API-Key: <your-secret>
+    """
+    try:
+        return service.ingest(payload, api_key)
+    except DeviceNotAuthorized as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    except InvalidSensorPayload as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

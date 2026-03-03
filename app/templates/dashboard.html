@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Device Selection</h2>
+
+    <form method="get">
+        <label for="device_id">Device:</label>
+        <select name="device_id" id="device_id">
+            {% for device in devices %}
+                <option value="{{ device }}" {% if device == selected_device %}selected{% endif %}>
+                    {{ device }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="limit">Records:</label>
+        <input type="number" name="limit" value="200" min="10" max="1000">
+
+        <button type="submit">Load</button>
+    </form>
+</div>
+
+
+{% if dashboard_data and dashboard_data.points %}
+
+<div class="card">
+    <h2>Timeseries Overview — {{ dashboard_data.device_id }}</h2>
+    <canvas id="sensorChart"></canvas>
+</div>
+
+{% else %}
+
+<div class="card">
+    <h2>No Data Available</h2>
+    <p>This device has no recorded sensor data yet.</p>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block scripts %}
+
+{% if dashboard_data and dashboard_data.points %}
+
+<script>
+    const ctx = document.getElementById('sensorChart').getContext('2d');
+
+    const labels = [
+        {% for point in dashboard_data.points %}
+            "{{ point.timestamp.isoformat() }}",
+        {% endfor %}
+    ];
+
+    const temperatureData = [
+        {% for point in dashboard_data.points %}
+            {{ point.temperature if point.temperature is not none else 'null' }},
+        {% endfor %}
+    ];
+
+    const humidityData = [
+        {% for point in dashboard_data.points %}
+            {{ point.humidity if point.humidity is not none else 'null' }},
+        {% endfor %}
+    ];
+
+    const soilData = [
+        {% for point in dashboard_data.points %}
+            {{ point.soil_moisture if point.soil_moisture is not none else 'null' }},
+        {% endfor %}
+    ];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Temperature (°C)',
+                    data: temperatureData,
+                    borderWidth: 2,
+                    tension: 0.3
+                },
+                {
+                    label: 'Humidity (%)',
+                    data: humidityData,
+                    borderWidth: 2,
+                    tension: 0.3
+                },
+                {
+                    label: 'Soil Moisture (%)',
+                    data: soilData,
+                    borderWidth: 2,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Timestamp'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Sensor Value'
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+{% endif %}
+
+{% endblock %}

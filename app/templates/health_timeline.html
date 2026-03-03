@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{# ── Gauge macro ─────────────────────────────────────────── #}
+{% macro gauge(score, size=110) %}
+{% set arc    = 125.66 %}
+{% set filled = (score / 100 * arc) | round(2) %}
+{% if score >= 90 %}{% set color = "#22c55e" %}{% set label = "Excellent" %}
+{% elif score >= 70 %}{% set color = "#84cc16" %}{% set label = "Good" %}
+{% elif score >= 50 %}{% set color = "#eab308" %}{% set label = "Fair" %}
+{% elif score >= 30 %}{% set color = "#f97316" %}{% set label = "Poor" %}
+{% else %}{% set color = "#ef4444" %}{% set label = "Critical" %}{% endif %}
+<div style="width:{{ size }}px;text-align:center;flex-shrink:0;">
+    <svg viewBox="0 0 100 66" width="{{ size }}" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 10 58 A 40 40 0 0 1 90 58"
+              fill="none" stroke="#e2e8f0" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 10 58 A 40 40 0 0 1 90 58"
+              fill="none" stroke="{{ color }}" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="{{ filled }} 200"/>
+        <text x="50" y="53" text-anchor="middle"
+              font-size="22" font-weight="800" fill="{{ color }}"
+              font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif">{{ score }}</text>
+    </svg>
+    <div style="font-size:0.62rem;font-weight:800;color:{{ color }};letter-spacing:0.07em;text-transform:uppercase;margin-top:-5px;">{{ label }}</div>
+</div>
+{% endmacro %}
+
+
+{% block head %}
+<style>
+/* ─── Health Banner ──────────────────────────────────────── */
+.health-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.banner-info { flex: 1; min-width: 180px; }
+
+.banner-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+    margin-bottom: 0.3rem;
+}
+
+.banner-summary {
+    font-size: 0.95rem;
+    color: var(--text-2);
+    line-height: 1.55;
+    max-width: 540px;
+    margin-bottom: 0.4rem;
+}
+
+.banner-ts {
+    font-size: 0.75rem;
+    color: var(--text-3);
+}
+
+/* ─── Score trend ────────────────────────────────────────── */
+.score-trend {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-end;
+    height: 40px;
+    margin-top: 0.5rem;
+}
+
+.trend-bar {
+    width: 10px;
+    border-radius: 3px 3px 0 0;
+    min-height: 4px;
+    opacity: 0.85;
+}
+
+/* ─── Upload Card ────────────────────────────────────────── */
+.upload-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.25rem;
+}
+
+.upload-card-hd {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.upload-hd-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+}
+
+.upload-form-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.upload-file-zone {
+    flex: 1;
+    min-width: 200px;
+}
+
+.file-hint {
+    font-size: 0.72rem;
+    color: var(--text-3);
+    margin-top: 0.35rem;
+}
+
+.btn-analyze { min-width: 140px; }
+.btn-analyze.loading { opacity: 0.65; pointer-events: none; }
+
+/* ─── Section title ──────────────────────────────────────── */
+.tl-section-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.tl-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+}
+
+/* ─── Timeline ───────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; }
+
+.tl-item {
+    display: flex;
+    gap: 1rem;
+}
+
+.tl-spine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20px;
+    flex-shrink: 0;
+    padding-top: 4px;
+}
+
+.tl-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 2px var(--green);
+    flex-shrink: 0;
+}
+
+.tl-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border);
+    margin: 5px 0 0;
+    min-height: 20px;
+}
+
+.tl-item:last-child .tl-line { display: none; }
+
+.tl-body {
+    flex: 1;
+    padding-bottom: 1.75rem;
+}
+
+.tl-date {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-3);
+    margin-bottom: 0.6rem;
+}
+
+.tl-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Card top row */
+.tl-top {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.tl-content { flex: 1; min-width: 200px; }
+
+.tl-summary {
+    font-size: 0.9rem;
+    color: var(--text-1);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+/* Issues / Suggestions columns */
+.tl-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.875rem;
+}
+
+@media (max-width: 560px) { .tl-cols { grid-template-columns: 1fr; } }
+
+.tl-col-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.tl-col-title.issues-title      { color: #b91c1c; }
+.tl-col-title.suggestions-title { color: #15803d; }
+
+.tl-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.tl-list li {
+    font-size: 0.84rem;
+    color: var(--text-2);
+    display: flex;
+    gap: 0.4rem;
+    line-height: 1.45;
+    align-items: flex-start;
+}
+
+.tl-list li::before { flex-shrink: 0; margin-top: 1px; font-size: 0.7rem; }
+.issues-list      li::before { content: "⚠"; color: #b91c1c; }
+.suggestions-list li::before { content: "✓"; color: #15803d; }
+
+/* Image thumbnails */
+.tl-images {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.tl-images img {
+    width: 76px;
+    height: 76px;
+    object-fit: cover;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: opacity 0.15s, transform 0.15s;
+}
+
+.tl-images img:hover {
+    opacity: 0.85;
+    transform: scale(1.03);
+}
+
+/* ─── Empty state ────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-3);
+}
+
+.empty-icon  { font-size: 4rem; display: block; margin-bottom: 1rem; line-height: 1; }
+.empty-title { font-size: 1.1rem; font-weight: 700; color: var(--text-2); margin-bottom: 0.5rem; }
+.empty-text  { font-size: 0.875rem; line-height: 1.6; }
+
+/* ─── Lightbox ───────────────────────────────────────────── */
+#lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+#lightbox.open { display: flex; }
+
+#lightbox img {
+    max-width: min(90vw, 800px);
+    max-height: 90vh;
+    border-radius: var(--r);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+#lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1.25rem;
+    font-size: 2rem;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+#lightbox-close:hover { color: #fff; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <a href="/catalog">Catalog</a>
+    <span class="sep">›</span>
+    <a href="/catalog/{{ plant.id }}">{{ plant.name }}</a>
+    <span class="sep">›</span>
+    <span>Health</span>
+</div>
+
+<!-- Page header -->
+<div class="sec-hd">
+    <div>
+        <h1 class="sec-title">Health Analysis</h1>
+        <p class="sec-sub">{{ plant.name }} · <span class="mono" style="font-size:0.75rem;">{{ plant.device_id }}</span></p>
+    </div>
+    <a href="/catalog/{{ plant.id }}" class="btn btn-ghost btn-sm">← Plant Detail</a>
+</div>
+
+{% if error %}
+<div class="alert alert-error">⚠ {{ error }}</div>
+{% endif %}
+
+<!-- ── Current Health Banner ───────────────────────────── -->
+{% if logs %}
+{% set latest = logs[0] %}
+<div class="health-banner">
+    {{ gauge(latest.health_score, size=120) }}
+    <div class="banner-info">
+        <p class="banner-label">Current Health Status</p>
+        <p class="banner-summary">{{ latest.summary }}</p>
+        <p class="banner-ts">Last analyzed {{ latest.created_at.strftime('%B %d, %Y at %H:%M') }}</p>
+
+        <!-- Score trend mini bar chart -->
+        {% if logs | length > 1 %}
+        <div class="score-trend" title="Score trend (oldest → newest)">
+            {% for log in logs[-8:] | reverse %}
+            {% set h = (log.health_score / 100 * 36) | int %}
+            {% if log.health_score >= 70 %}{% set bc = "#22c55e" %}
+            {% elif log.health_score >= 50 %}{% set bc = "#eab308" %}
+            {% else %}{% set bc = "#ef4444" %}{% endif %}
+            <div class="trend-bar" style="height:{{ h | max(4) }}px;background:{{ bc }};" title="{{ log.created_at.strftime('%b %d') }}: {{ log.health_score }}"></div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Upload / Analyze Form ──────────────────────────── -->
+<div class="upload-card">
+    <div class="upload-card-hd">
+        <span style="font-size:1.2rem;">🔬</span>
+        <span class="upload-hd-title">New Analysis</span>
+    </div>
+    <form action="/catalog/{{ plant.id }}/health/analyze"
+          method="post"
+          enctype="multipart/form-data"
+          id="analyze-form">
+        <div class="upload-form-row">
+            <div class="upload-file-zone">
+                <input type="file" name="files" accept=".jpg,.jpeg,.png,.webp"
+                       multiple required>
+                <p class="file-hint">Upload 1–3 clear photos of your plant for AI health assessment</p>
+            </div>
+            <button type="submit" class="btn btn-green btn-analyze" id="analyze-btn">
+                Analyze Health
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- ── History Timeline ────────────────────────────────── -->
+{% if logs %}
+<div class="tl-section-hd">
+    <span class="tl-section-title">Analysis History</span>
+    <span class="chip chip-gray">{{ logs | length }} session{{ 's' if logs | length != 1 else '' }}</span>
+</div>
+
+<div class="timeline">
+{% for log in logs %}
+<div class="tl-item">
+    <div class="tl-spine">
+        <div class="tl-dot"></div>
+        <div class="tl-line"></div>
+    </div>
+    <div class="tl-body">
+        <div class="tl-date">{{ log.created_at.strftime('%B %d, %Y · %H:%M') }}</div>
+        <div class="tl-card">
+            <div class="tl-top">
+
+                {{ gauge(log.health_score, size=100) }}
+
+                <div class="tl-content">
+                    <p class="tl-summary">{{ log.summary }}</p>
+
+                    {% if log.issues or log.suggestions %}
+                    <div class="tl-cols">
+                        {% if log.issues %}
+                        <div>
+                            <div class="tl-col-title issues-title">⚠ Issues</div>
+                            <ul class="tl-list issues-list">
+                                {% for issue in log.issues %}
+                                <li>{{ issue }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        {% if log.suggestions %}
+                        <div>
+                            <div class="tl-col-title suggestions-title">✓ Suggestions</div>
+                            <ul class="tl-list suggestions-list">
+                                {% for sug in log.suggestions %}
+                                <li>{{ sug }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if log.image_paths %}
+            <div class="tl-images">
+                {% for path in log.image_paths %}
+                <img src="/media/{{ path }}" alt="Analysis photo"
+                     onclick="openLightbox(this.src)" loading="lazy">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+    <span class="empty-icon">🔬</span>
+    <p class="empty-title">No analyses yet</p>
+    <p class="empty-text">Upload 1–3 photos above to get<br>your first AI health assessment.</p>
+</div>
+{% endif %}
+
+<!-- Lightbox -->
+<div id="lightbox" onclick="closeLightbox()">
+    <span id="lightbox-close" onclick="closeLightbox()">×</span>
+    <img id="lightbox-img" src="" alt="Full size photo">
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    // Lightbox
+    function openLightbox(src) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox').classList.add('open');
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('open');
+    }
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+
+    // Analyze loading state
+    document.getElementById('analyze-form').addEventListener('submit', function() {
+        const btn = document.getElementById('analyze-btn');
+        btn.textContent = '⏳ Analyzing…';
+        btn.classList.add('loading');
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+/* ─── Stats row ──────────────────────────────────────────── */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1rem 1.1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-1);
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.3rem;
+}
+
+.stat-card.accent-green .stat-value { color: var(--green); }
+.stat-card.accent-blue  .stat-value { color: var(--blue); }
+.stat-card.accent-amber .stat-value { color: var(--amber); }
+
+/* ─── Search + Controls ──────────────────────────────────── */
+.controls-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+    max-width: 360px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-3);
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.search-input {
+    padding-left: 2.2rem !important;
+    width: 100% !important;
+}
+
+/* ─── Register Panel ─────────────────────────────────────── */
+.register-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    display: none;
+}
+
+.register-panel.open { display: block; }
+
+.register-panel-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.register-panel-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-1);
+}
+
+.register-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto auto;
+    gap: 0.75rem;
+    align-items: end;
+}
+
+@media (max-width: 640px) {
+    .register-form { grid-template-columns: 1fr; }
+}
+
+/* ─── Shelf / Plant Grid ─────────────────────────────────── */
+.shelf {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+}
+
+@media (max-width: 480px) {
+    .shelf { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+}
+
+/* ─── Plant Card ─────────────────────────────────────────── */
+.plant-card {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+}
+
+.plant-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-strong);
+}
+
+.plant-card:active { transform: translateY(-1px); }
+
+/* Photo zone */
+.card-photo {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 60%, #6ee7b7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.plant-card:hover .card-photo img { transform: scale(1.04); }
+
+.card-photo .ph-icon {
+    font-size: 3.5rem;
+    opacity: 0.5;
+}
+
+/* Badges over photo */
+.card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.6rem;
+    pointer-events: none;
+}
+
+.overlay-top {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3rem;
+}
+
+.overlay-bot {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.badge-auto {
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    padding: 0.18rem 0.45rem;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+}
+
+.badge-species {
+    background: rgba(22,163,74,0.85);
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+}
+
+/* Health score mini badge */
+.badge-health {
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 0.18rem 0.45rem;
+    letter-spacing: 0.03em;
+    backdrop-filter: blur(4px);
+}
+
+.badge-health.h-ex { background: rgba(34,197,94,0.9);  color: #fff; }
+.badge-health.h-gd { background: rgba(132,204,22,0.9); color: #fff; }
+.badge-health.h-fa { background: rgba(234,179,8,0.9);  color: #fff; }
+.badge-health.h-po { background: rgba(249,115,22,0.9); color: #fff; }
+.badge-health.h-cr { background: rgba(239,68,68,0.9);  color: #fff; }
+
+/* Card info section */
+.card-info {
+    padding: 0.875rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+}
+
+.card-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+}
+
+.card-device {
+    font-size: 0.7rem;
+    color: var(--text-3);
+    font-family: 'SF Mono', ui-monospace, monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Feature tags row */
+.card-tags {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.18rem 0.45rem;
+    border-radius: 20px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.tag-ok     { background: var(--green-50);  color: #15803d;  border-color: var(--green-200); }
+.tag-warn   { background: var(--amber-50);  color: #92400e;  border-color: var(--amber-200); }
+.tag-danger { background: var(--red-50);    color: #991b1b;  border-color: var(--red-200);   }
+.tag-off    { background: var(--surface-2); color: var(--text-3); border-color: var(--border); }
+
+/* ─── Empty state ────────────────────────────────────────── */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-3);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+    line-height: 1;
+}
+
+.empty-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-2);
+    margin-bottom: 0.5rem;
+}
+
+.empty-text {
+    font-size: 0.875rem;
+    color: var(--text-3);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+/* No results (search) */
+.no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-3);
+    font-size: 0.9rem;
+}
+
+/* Hidden by search filter */
+.plant-card.hidden { display: none; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ── Stats Row ──────────────────────────────────────────── -->
+{% set total = plants | length %}
+{% set with_photo   = plants | selectattr('image_path') | list | length %}
+{% set with_species = plants | selectattr('species')    | list | length %}
+{% set with_sensors = plant_stats.values() | selectattr('has_sensors') | list | length %}
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-label">Plants Total</div>
+    </div>
+    <div class="stat-card accent-green">
+        <div class="stat-value">{{ with_sensors }}</div>
+        <div class="stat-label">Active Sensors</div>
+    </div>
+    <div class="stat-card accent-blue">
+        <div class="stat-value">{{ with_species }}</div>
+        <div class="stat-label">Identified</div>
+    </div>
+    <div class="stat-card accent-amber">
+        <div class="stat-value">{{ with_photo }}</div>
+        <div class="stat-label">With Photos</div>
+    </div>
+</div>
+
+<!-- ── Page Header + Controls ────────────────────────────── -->
+<div class="sec-hd">
+    <div>
+        <h1 class="sec-title">Plant Catalog</h1>
+        <p class="sec-sub">{{ total }} plant{{ 's' if total != 1 else '' }} registered</p>
+    </div>
+    <button class="btn btn-green" onclick="openRegister()" id="add-btn">
+        + Add Plant
+    </button>
+</div>
+
+{% if error %}
+<div class="alert alert-error">⚠ {{ error }}</div>
+{% endif %}
+{% if success %}
+<div class="alert alert-success">✓ {{ success }}</div>
+{% endif %}
+
+<!-- ── Register Panel ─────────────────────────────────────── -->
+<div class="register-panel" id="register-panel">
+    <div class="register-panel-hd">
+        <span class="register-panel-title">Register New Plant</span>
+        <button class="btn btn-sm btn-ghost" onclick="closeRegister()">✕ Cancel</button>
+    </div>
+    <form action="/catalog/register" method="post" class="register-form">
+        <div class="form-field">
+            <label class="form-label" for="name">Plant Name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Ficus Benjamin" required>
+        </div>
+        <div class="form-field">
+            <label class="form-label" for="device_id">Device ID</label>
+            <input type="text" id="device_id" name="device_id"
+                   placeholder="e.g. ESP32_A1B2"
+                   list="device-suggestions"
+                   autocomplete="off" required>
+            <datalist id="device-suggestions">
+                {% for did in unregistered_devices %}
+                <option value="{{ did }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="form-field" style="justify-content:flex-end">
+            <button type="submit" class="btn btn-green">Register</button>
+        </div>
+    </form>
+    {% if unregistered_devices %}
+    <p style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-3);">
+        💡 {{ unregistered_devices | length }} unregistered device{{ 's' if unregistered_devices | length != 1 else '' }} detected. Type to autocomplete.
+    </p>
+    {% endif %}
+</div>
+
+<!-- ── Search / Filter ───────────────────────────────────── -->
+{% if plants %}
+<div class="controls-row">
+    <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="search-input"
+               placeholder="Search plants…" oninput="filterPlants(this.value)" autocomplete="off">
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-ghost filter-btn active" onclick="setFilter('all', this)">All</button>
+        <button class="btn btn-sm btn-ghost filter-btn" onclick="setFilter('sensor', this)">📡 Active</button>
+        <button class="btn btn-sm btn-ghost filter-btn" onclick="setFilter('no_photo', this)">📷 No Photo</button>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Plant Grid ─────────────────────────────────────────── -->
+<div class="shelf" id="plant-shelf">
+
+    {% if not plants %}
+    <div class="empty-state">
+        <span class="empty-icon">🪴</span>
+        <p class="empty-title">No plants yet</p>
+        <p class="empty-text">Register your first plant manually or<br>connect an ESP32 sensor device.</p>
+        <button class="btn btn-green btn-lg" onclick="openRegister()">+ Register First Plant</button>
+    </div>
+
+    {% else %}
+    {% for plant in plants %}
+    {% set stats = plant_stats.get(plant.id, {}) %}
+    {% set hs = stats.get('health_score', none) %}
+    {% set has_sensor = stats.get('has_sensors', false) %}
+
+    <a class="plant-card"
+       href="/catalog/{{ plant.id }}"
+       data-name="{{ plant.name | lower }}"
+       data-device="{{ plant.device_id | lower }}"
+       data-has-sensor="{{ 'true' if has_sensor else 'false' }}"
+       data-has-photo="{{ 'true' if plant.image_path else 'false' }}">
+
+        <div class="card-photo">
+            {% if plant.image_path %}
+                <img src="/media/{{ plant.image_path }}" alt="{{ plant.name }}" loading="lazy">
+            {% else %}
+                <span class="ph-icon">🌿</span>
+            {% endif %}
+
+            <div class="card-overlay">
+                <div class="overlay-top">
+                    {% if hs is not none %}
+                    {% if hs >= 90 %}{% set hcls = 'h-ex' %}{% set hlbl = 'Excellent' %}
+                    {% elif hs >= 70 %}{% set hcls = 'h-gd' %}{% set hlbl = 'Good' %}
+                    {% elif hs >= 50 %}{% set hcls = 'h-fa' %}{% set hlbl = 'Fair' %}
+                    {% elif hs >= 30 %}{% set hcls = 'h-po' %}{% set hlbl = 'Poor' %}
+                    {% else %}{% set hcls = 'h-cr' %}{% set hlbl = 'Critical' %}{% endif %}
+                    <span class="badge-health {{ hcls }}">❤ {{ hs }}</span>
+                    {% endif %}
+
+                    {% if plant.name.startswith('Plant-') %}
+                    <span class="badge-auto">AUTO</span>
+                    {% endif %}
+                </div>
+                <div class="overlay-bot">
+                    {% if plant.species and plant.species != 'Unknown' %}
+                    <span class="badge-species">🔬 {{ plant.species.split('(')[0].strip() }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card-info">
+            <div class="card-name">{{ plant.name }}</div>
+            <div class="card-device mono">{{ plant.device_id }}</div>
+
+            <!-- Feature status tags -->
+            <div class="card-tags">
+                <!-- Profile Image -->
+                {% if plant.image_path %}
+                <span class="tag tag-ok" title="Profile photo uploaded">📷</span>
+                {% else %}
+                <span class="tag tag-off" title="No profile photo">📷</span>
+                {% endif %}
+
+                <!-- Species ID -->
+                {% if plant.species and plant.species != 'Unknown' %}
+                <span class="tag tag-ok" title="Species identified">🔬</span>
+                {% elif plant.species == 'Unknown' %}
+                <span class="tag tag-warn" title="Species unknown">🔬</span>
+                {% else %}
+                <span class="tag tag-off" title="Species not identified">🔬</span>
+                {% endif %}
+
+                <!-- Sensors -->
+                {% if has_sensor %}
+                <span class="tag tag-ok" title="Sensor data received">📡</span>
+                {% else %}
+                <span class="tag tag-off" title="No sensor data">📡</span>
+                {% endif %}
+
+                <!-- Health Check -->
+                {% if hs is not none %}
+                {% if hs >= 70 %}
+                <span class="tag tag-ok" title="Health score: {{ hs }}">❤</span>
+                {% elif hs >= 40 %}
+                <span class="tag tag-warn" title="Health score: {{ hs }}">❤</span>
+                {% else %}
+                <span class="tag tag-danger" title="Health score: {{ hs }}">❤</span>
+                {% endif %}
+                {% else %}
+                <span class="tag tag-off" title="No health check">❤</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+
+    <!-- No results placeholder (shown by JS) -->
+    <div class="no-results" id="no-results" style="display:none;">
+        <span style="font-size:2rem;display:block;margin-bottom:0.75rem;">🔍</span>
+        No plants match your search.
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    // ── Open / close register panel ──────────────────────── //
+    function openRegister() {
+        const panel = document.getElementById('register-panel');
+        panel.classList.add('open');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        document.getElementById('name').focus();
+    }
+
+    function closeRegister() {
+        document.getElementById('register-panel').classList.remove('open');
+    }
+
+    // Auto-open on error or ?add=1
+    const params = new URLSearchParams(window.location.search);
+    if ({{ 'true' if error else 'false' }} || params.get('add') === '1') {
+        openRegister();
+    }
+
+    // ── Search / filter ───────────────────────────────────── //
+    let activeFilter = 'all';
+
+    function filterPlants(query) {
+        const q = query.toLowerCase().trim();
+        applyFilters(q, activeFilter);
+    }
+
+    function setFilter(type, btn) {
+        activeFilter = type;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const q = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
+        applyFilters(q, activeFilter);
+    }
+
+    function applyFilters(q, filter) {
+        const cards = document.querySelectorAll('.plant-card');
+        let visible = 0;
+
+        cards.forEach(card => {
+            const name   = card.dataset.name   || '';
+            const device = card.dataset.device  || '';
+            const hasSensor = card.dataset.hasSensor === 'true';
+            const hasPhoto  = card.dataset.hasPhoto  === 'true';
+
+            const matchSearch = !q || name.includes(q) || device.includes(q);
+            const matchFilter =
+                filter === 'all'      ? true :
+                filter === 'sensor'   ? hasSensor :
+                filter === 'no_photo' ? !hasPhoto :
+                true;
+
+            const show = matchSearch && matchFilter;
+            card.classList.toggle('hidden', !show);
+            if (show) visible++;
+        });
+
+        const noRes = document.getElementById('no-results');
+        if (noRes) noRes.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    // ── active filter button style ──────────────────────── //
+    const style = document.createElement('style');
+    style.textContent = '.filter-btn.active { background: var(--green-50); color: var(--green); border-color: var(--green-200); }';
+    document.head.appendChild(style);
+</script>
+{% endblock %}
