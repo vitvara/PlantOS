@@ -10,6 +10,10 @@ An AI-powered IoT plant monitoring platform. Connect ESP32 sensor devices to you
 ![Tests](https://img.shields.io/badge/tests-128%20passed-brightgreen?style=flat-square&logo=pytest)
 ![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen?style=flat-square)
 
+<img width="320" height="699" alt="image" src="https://github.com/user-attachments/assets/c841d8ad-273a-4643-b806-e16b77e1eca2" />
+<img width="1904" height="973" alt="image" src="https://github.com/user-attachments/assets/e93c5682-7152-48ea-9e6c-907334d82aec" />
+<img width="1894" height="968" alt="image" src="https://github.com/user-attachments/assets/6696d955-7ac3-4ddf-8367-f4f806bcfed4" />
+
 ---
 
 ## Features
