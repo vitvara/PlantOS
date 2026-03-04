@@ -13,7 +13,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 def create_plant_via_api(client, name="Fern", device_id="UI001"):
-    r = client.post("/plants/", json={"name": name, "device_id": device_id})
+    r = client.post("/api/v1/plants/", json={"name": name, "device_id": device_id})
     return r.json()
 
 
@@ -218,17 +218,14 @@ class TestIdentifySpeciesUI:
                     files={"file": ("plant.jpg", fake_file, "image/jpeg")},
                 )
 
-            mock_response = MagicMock()
-            mock_response.choices[0].message.content = (
+            mock_ai = AsyncMock()
+            mock_ai.complete = AsyncMock(return_value=(
                 '{"species":"Peace Lily","species_thai":"ลิลลี่",'
                 '"confidence":"High","care_guide":{"Watering":"weekly"}}'
-            )
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+            ))
 
             with patch("app.plant.service.settings") as ms2, \
-                 patch("app.plant.service.AsyncOpenAI", return_value=mock_client):
-                ms2.OPENAI_API_KEY = "fake-key"
+                 patch("app.core.protocols.OpenAIProvider", return_value=mock_ai):
                 ms2.MEDIA_ROOT = tmpdir
                 response = client.post(
                     f"/catalog/{plant['id']}/identify-species",
@@ -249,12 +246,11 @@ class TestIdentifySpeciesUI:
                     files={"file": ("cactus.jpg", fake_file, "image/jpeg")},
                 )
 
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(side_effect=RuntimeError("fail"))
+            mock_ai = AsyncMock()
+            mock_ai.complete = AsyncMock(side_effect=RuntimeError("fail"))
 
             with patch("app.plant.service.settings") as ms2, \
-                 patch("app.plant.service.AsyncOpenAI", return_value=mock_client):
-                ms2.OPENAI_API_KEY = "fake-key"
+                 patch("app.core.protocols.OpenAIProvider", return_value=mock_ai):
                 ms2.MEDIA_ROOT = tmpdir
                 response = client.post(
                     f"/catalog/{plant['id']}/identify-species",
@@ -313,17 +309,14 @@ class TestHealthAnalysisUI:
 
     def test_analysis_success_redirects(self, client):
         plant = create_plant_via_api(client, "Healthy", "UI081")
-        mock_response = MagicMock()
-        mock_response.choices[0].message.content = (
+        mock_ai = AsyncMock()
+        mock_ai.complete = AsyncMock(return_value=(
             '{"health_score": 90, "summary": "Excellent", "issues": [], "suggestions": []}'
-        )
-        mock_client = AsyncMock()
-        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        ))
 
         with tempfile.TemporaryDirectory() as tmpdir, \
              patch("app.health.service.settings") as ms, \
-             patch("app.health.service.AsyncOpenAI", return_value=mock_client):
-            ms.OPENAI_API_KEY = "fake-key"
+             patch("app.core.protocols.OpenAIProvider", return_value=mock_ai):
             ms.MEDIA_ROOT = tmpdir
             fake_file = io.BytesIO(b"fakedata")
             response = client.post(

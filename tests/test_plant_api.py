@@ -1,4 +1,4 @@
-"""Integration tests for the Plant REST API routes."""
+"""Integration tests for the Plant REST API routes (v1)."""
 from __future__ import annotations
 
 import io
@@ -9,39 +9,39 @@ import pytest
 
 
 def create_plant(client, name="Fern", device_id="DEV_API_01"):
-    response = client.post("/plants/", json={"name": name, "device_id": device_id})
+    response = client.post("/api/v1/plants/", json={"name": name, "device_id": device_id})
     assert response.status_code == 201
     return response.json()
 
 
 class TestCreatePlantEndpoint:
     def test_create_plant_returns_201(self, client):
-        response = client.post("/plants/", json={"name": "Fern", "device_id": "AP001"})
+        response = client.post("/api/v1/plants/", json={"name": "Fern", "device_id": "AP001"})
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Fern"
         assert data["device_id"] == "AP001"
 
     def test_duplicate_device_id_returns_409(self, client):
-        client.post("/plants/", json={"name": "A", "device_id": "AP002"})
-        response = client.post("/plants/", json={"name": "B", "device_id": "AP002"})
+        client.post("/api/v1/plants/", json={"name": "A", "device_id": "AP002"})
+        response = client.post("/api/v1/plants/", json={"name": "B", "device_id": "AP002"})
         assert response.status_code == 409
 
     def test_missing_name_returns_422(self, client):
-        response = client.post("/plants/", json={"device_id": "AP003"})
+        response = client.post("/api/v1/plants/", json={"device_id": "AP003"})
         assert response.status_code == 422
 
 
 class TestListPlantsEndpoint:
     def test_list_empty(self, client):
-        response = client.get("/plants/")
+        response = client.get("/api/v1/plants/")
         assert response.status_code == 200
         assert response.json() == []
 
     def test_list_multiple(self, client):
         create_plant(client, "A", "AP010")
         create_plant(client, "B", "AP011")
-        response = client.get("/plants/")
+        response = client.get("/api/v1/plants/")
         assert response.status_code == 200
         assert len(response.json()) == 2
 
@@ -49,12 +49,12 @@ class TestListPlantsEndpoint:
 class TestGetPlantEndpoint:
     def test_get_existing_plant(self, client):
         plant = create_plant(client, "Rose", "AP020")
-        response = client.get(f"/plants/{plant['id']}")
+        response = client.get(f"/api/v1/plants/{plant['id']}")
         assert response.status_code == 200
         assert response.json()["name"] == "Rose"
 
     def test_get_nonexistent_returns_404(self, client):
-        response = client.get("/plants/99999")
+        response = client.get("/api/v1/plants/99999")
         assert response.status_code == 404
 
 
@@ -67,7 +67,7 @@ class TestUploadImageEndpoint:
                 mock_settings.OPENAI_API_KEY = ""
                 fake_file = io.BytesIO(b"fakeimagedata")
                 response = client.post(
-                    f"/plants/{plant['id']}/upload-image",
+                    f"/api/v1/plants/{plant['id']}/upload-image",
                     files={"file": ("photo.jpg", fake_file, "image/jpeg")},
                 )
         assert response.status_code == 200
@@ -81,7 +81,7 @@ class TestUploadImageEndpoint:
                 mock_settings.OPENAI_API_KEY = ""
                 fake_file = io.BytesIO(b"data")
                 response = client.post(
-                    f"/plants/{plant['id']}/upload-image",
+                    f"/api/v1/plants/{plant['id']}/upload-image",
                     files={"file": ("photo.bmp", fake_file, "image/bmp")},
                 )
         assert response.status_code == 400
@@ -92,7 +92,7 @@ class TestUploadImageEndpoint:
                 mock_settings.MEDIA_ROOT = tmpdir
                 fake_file = io.BytesIO(b"data")
                 response = client.post(
-                    "/plants/99999/upload-image",
+                    "/api/v1/plants/99999/upload-image",
                     files={"file": ("photo.jpg", fake_file, "image/jpeg")},
                 )
         assert response.status_code == 404
@@ -102,7 +102,7 @@ class TestIdentifySpeciesEndpoint:
     @pytest.mark.asyncio
     async def test_no_profile_image_returns_422(self, client):
         plant = create_plant(client, "Unknown", "AP040")
-        response = client.post(f"/plants/{plant['id']}/identify-species")
+        response = client.post(f"/api/v1/plants/{plant['id']}/identify-species")
         assert response.status_code == 422
 
     @pytest.mark.asyncio
@@ -118,25 +118,22 @@ class TestIdentifySpeciesEndpoint:
                 mock_settings.OPENAI_API_KEY = ""
                 fake_file = io.BytesIO(b"fakedata")
                 client.post(
-                    f"/plants/{plant['id']}/upload-image",
+                    f"/api/v1/plants/{plant['id']}/upload-image",
                     files={"file": ("plant.jpg", fake_file, "image/jpeg")},
                 )
 
-            mock_response = MagicMock()
-            mock_response.choices[0].message.content = (
+            mock_ai = AsyncMock()
+            mock_ai.complete = AsyncMock(return_value=(
                 '{"species":"Peace Lily","species_thai":"ลิลลี่",'
                 '"confidence":"High","care_guide":{"Watering":"weekly"}}'
-            )
-            mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+            ))
 
             with patch("app.plant.service.settings") as mock_settings2, \
-                 patch("app.plant.service.AsyncOpenAI", return_value=mock_client):
-                mock_settings2.OPENAI_API_KEY = "fake-key"
+                 patch("app.core.protocols.OpenAIProvider", return_value=mock_ai):
                 mock_settings2.MEDIA_ROOT = tmpdir
-                response = client.post(f"/plants/{plant['id']}/identify-species")
+                response = client.post(f"/api/v1/plants/{plant['id']}/identify-species")
         assert response.status_code == 200
 
     def test_identify_species_plant_not_found(self, client):
-        response = client.post("/plants/99999/identify-species")
+        response = client.post("/api/v1/plants/99999/identify-species")
         assert response.status_code == 404

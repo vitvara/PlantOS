@@ -50,6 +50,9 @@ def create_application() -> FastAPI:
 
     app.include_router(api_router)
 
+    # Serve static assets (favicon, icons)
+    app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
+
     # Serve uploaded plant images
     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
     app.mount("/media", StaticFiles(directory=settings.MEDIA_ROOT), name="media")

@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{{ title if title else "PlantOS" }}</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PlantOS">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +20,8 @@
         --bg:            #f0f4f8;
         --surface:       #ffffff;
         --surface-2:     #f8fafc;
-        --header-bg:     #0d1b2a;
-        --nav-bg:        #1a2b3c;
+        --header-bg:     #0c2627;
+        --nav-bg:        #0e3432;
         --border:        #e2e8f0;
         --border-strong: #cbd5e1;
 
@@ -24,12 +29,12 @@
         --text-2: #475569;
         --text-3: #94a3b8;
 
-        --green:      #16a34a;
-        --green-hover:#15803d;
-        --green-500:  #22c55e;
-        --green-50:   #f0fdf4;
-        --green-100:  #dcfce7;
-        --green-200:  #bbf7d0;
+        --green:      #569749;
+        --green-hover:#3e7a36;
+        --green-500:  #73ba79;
+        --green-50:   #eef7ed;
+        --green-100:  #d5e8d4;
+        --green-200:  #b4d6b2;
 
         --blue:       #2563eb;
         --blue-hover: #1d4ed8;
@@ -44,9 +49,9 @@
         --red-50:     #fef2f2;
         --red-200:    #fecaca;
 
-        --shadow-sm: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
-        --shadow:    0 4px 6px -1px rgba(15,23,42,0.07), 0 2px 4px -2px rgba(15,23,42,0.04);
-        --shadow-lg: 0 10px 15px -3px rgba(15,23,42,0.1),  0 4px 6px -4px rgba(15,23,42,0.05);
+        --shadow-sm: 0 1px 3px rgba(12,38,39,0.06), 0 1px 2px rgba(12,38,39,0.04);
+        --shadow:    0 4px 6px -1px rgba(12,38,39,0.07), 0 2px 4px -2px rgba(12,38,39,0.04);
+        --shadow-lg: 0 10px 15px -3px rgba(12,38,39,0.1),  0 4px 6px -4px rgba(12,38,39,0.05);
 
         --r-xs: 6px;
         --r-sm: 8px;
@@ -70,10 +75,15 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         line-height: 1.5;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
 
     @media (max-width: 768px) {
         body { padding-bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom, 0px)); }
+        /* iOS PWA: html layer shows in safe-area & rubber-band zones; match bottom nav */
+        html { background-color: var(--header-bg); }
     }
 
     img { display: block; max-width: 100%; }
@@ -104,14 +114,14 @@
     .brand-icon {
         width: 30px;
         height: 30px;
-        background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+        background: rgba(255,255,255,0.08);
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.95rem;
         flex-shrink: 0;
-        box-shadow: 0 2px 8px rgba(22,163,74,0.4);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(86,151,73,0.35);
     }
 
     .brand-text {
@@ -120,12 +130,12 @@
         color: #fff;
         letter-spacing: -0.02em;
     }
-    .brand-text em { font-style: normal; color: #4ade80; }
+    .brand-text em { font-style: normal; color: #73ba79; }
 
     .header-pill {
-        background: rgba(34,197,94,0.12);
-        border: 1px solid rgba(34,197,94,0.25);
-        color: #4ade80;
+        background: rgba(115,186,121,0.15);
+        border: 1px solid rgba(115,186,121,0.3);
+        color: #73ba79;
         font-size: 0.6rem;
         font-weight: 700;
         padding: 0.15rem 0.45rem;
@@ -150,7 +160,7 @@
     .status-dot {
         width: 7px;
         height: 7px;
-        background: #22c55e;
+        background: #73ba79;
         border-radius: 50%;
         animation: blink 2.4s ease-in-out infinite;
     }
@@ -188,7 +198,7 @@
     }
 
     .desktop-nav a:hover  { color: #e2e8f0; }
-    .desktop-nav a.active { color: #fff; border-bottom-color: #22c55e; }
+    .desktop-nav a.active { color: #fff; border-bottom-color: #73ba79; }
 
     /* ─── Mobile Bottom Navigation ─────────────────────────── */
     .mobile-nav {
@@ -230,19 +240,21 @@
         max-width: 80px;
     }
 
-    .mobile-nav a.active { color: #22c55e; }
+    .mobile-nav a.active { color: #73ba79; }
 
     .mobile-nav .nav-icon {
         font-size: 1.35rem;
         line-height: 1;
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: transform 0.15s;
     }
     .mobile-nav a.active .nav-icon { transform: scale(1.1); }
 
     /* FAB add button */
     .mob-fab {
-        background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+        background: linear-gradient(135deg, #3e7a36, #569749) !important;
         color: white !important;
         border-radius: 50% !important;
         width: 48px;
@@ -250,7 +262,7 @@
         max-width: 60px !important;
         padding: 0 !important;
         margin-top: -14px;
-        box-shadow: 0 4px 14px rgba(22,163,74,0.5);
+        box-shadow: 0 4px 14px rgba(86,151,73,0.5);
         justify-content: center;
         align-items: center;
         display: flex !important;
@@ -267,6 +279,7 @@
     /* ─── Main Layout ───────────────────────────────────────── */
     main {
         padding: 1.5rem;
+        flex: 1;
     }
 
     .container {
@@ -537,7 +550,9 @@
 <!-- ── Header ─────────────────────────────────────────── -->
 <header>
     <a href="/catalog" class="brand">
-        <div class="brand-icon">🌿</div>
+        <div class="brand-icon">
+            <img src="/static/favicon.svg" width="26" height="26" alt="PlantOS">
+        </div>
         <span class="brand-text">Plant<em>OS</em></span>
     </a>
     <span class="header-pill">v1.0</span>
@@ -552,7 +567,7 @@
 <!-- ── Desktop Nav ────────────────────────────────────── -->
 <nav class="desktop-nav">
     <a href="/catalog" class="{{ 'active' if request.url.path.startswith('/catalog') else '' }}">
-        🌿 Plant Catalog
+        <img src="/static/favicon.svg" width="14" height="14" alt="" style="vertical-align:middle;opacity:0.85;"> Plant Catalog
     </a>
 </nav>
 
@@ -568,7 +583,7 @@
 <!-- ── Mobile Bottom Nav ──────────────────────────────── -->
 <nav class="mobile-nav" aria-label="Main navigation">
     <a href="/catalog" class="{{ 'active' if request.url.path.startswith('/catalog') else '' }}">
-        <span class="nav-icon">🌿</span>
+        <span class="nav-icon"><img src="/static/favicon.svg" width="22" height="22" alt=""></span>
         Catalog
     </a>
     <a href="/catalog?add=1" class="mob-fab" aria-label="Add plant">
