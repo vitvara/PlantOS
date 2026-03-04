@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Literal, Optional
 
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.ui.repository import SensorQueryRepository
 from app.ui.schemas import DashboardData, TimeSeriesPoint
+
+SensorStatus = Literal["active", "failed", "no_data"]
 
 
 class DashboardService:
@@ -80,6 +83,26 @@ class DashboardService:
 
     def get_available_devices(self):
         return self.repository.get_distinct_devices()
+
+    def get_sensor_status(self, device_id: str) -> "SensorStatus":
+        """
+        Return the connectivity status of a sensor device.
+
+        - "no_data"  — no readings ever recorded
+        - "active"   — last reading within sensor_timeout_seconds
+        - "failed"   — last reading older than sensor_timeout_seconds
+        """
+        latest = self.repository.get_latest_by_device(device_id)
+        if latest is None:
+            return "no_data"
+
+        timeout = get_settings().sensor_timeout_seconds
+        # SQLite returns naive datetimes; normalise to UTC-aware before subtracting.
+        ts = latest.created_at
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        age = (datetime.now(timezone.utc) - ts).total_seconds()
+        return "active" if age <= timeout else "failed"
 
     # -------------------------
     # Private helpers

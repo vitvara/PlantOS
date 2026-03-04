@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Ingestion tuning
     max_payload_size: int = 1024  # bytes (for future use)
 
+    # Sensor health check — seconds without data before marking sensor as failed
+    sensor_timeout_seconds: int = 660
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 

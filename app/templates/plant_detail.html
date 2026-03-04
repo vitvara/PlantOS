@@ -254,6 +254,17 @@
 .reading-value.warn    { color: var(--amber); }
 .reading-value.danger  { color: var(--red); }
 
+.sensor-offline-banner {
+    margin: 0.75rem 1.25rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--red-50);
+    color: #991b1b;
+    border: 1px solid var(--red-200);
+    border-radius: var(--r-md);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
 .no-sensor {
     text-align: center;
     padding: 2rem;
@@ -696,10 +707,12 @@
                 <span class="chip chip-gray" title="Species not identified">🔬 Unidentified</span>
                 {% endif %}
 
-                {% if latest %}
-                <span class="chip chip-green" title="Sensor data active">📡 Live Sensor</span>
+                {% if sensor_status == 'active' %}
+                <span class="chip chip-green" title="Sensor active — data received recently">📡 Live Sensor</span>
+                {% elif sensor_status == 'failed' %}
+                <span class="chip chip-red" title="Sensor offline — no data received recently">📡 Sensor Offline</span>
                 {% else %}
-                <span class="chip chip-gray" title="No sensor data">📡 No Sensor</span>
+                <span class="chip chip-gray" title="No sensor data received yet">📡 No Sensor</span>
                 {% endif %}
 
                 {% if latest_health %}
@@ -746,6 +759,12 @@
                 <span class="sensor-ts">{{ latest.timestamp.strftime('%b %d · %H:%M') }}</span>
                 {% endif %}
             </div>
+
+            {% if sensor_status == 'failed' %}
+            <div class="sensor-offline-banner">
+                ⚠ Sensor offline — no data received for more than 11 minutes. Last known values shown below.
+            </div>
+            {% endif %}
 
             {% if latest %}
             <div class="readings-grid">

@@ -348,7 +348,7 @@
 {% set total = plants | length %}
 {% set with_photo   = plants | selectattr('image_path') | list | length %}
 {% set with_species = plants | selectattr('species')    | list | length %}
-{% set with_sensors = plant_stats.values() | selectattr('has_sensors') | list | length %}
+{% set with_sensors = plant_stats.values() | selectattr('sensor_status', 'equalto', 'active') | list | length %}
 
 <div class="stats-row">
     <div class="stat-card">
@@ -452,13 +452,13 @@
     {% for plant in plants %}
     {% set stats = plant_stats.get(plant.id, {}) %}
     {% set hs = stats.get('health_score', none) %}
-    {% set has_sensor = stats.get('has_sensors', false) %}
+    {% set sensor_status = stats.get('sensor_status', 'no_data') %}
 
     <a class="plant-card"
        href="/catalog/{{ plant.id }}"
        data-name="{{ plant.name | lower }}"
        data-device="{{ plant.device_id | lower }}"
-       data-has-sensor="{{ 'true' if has_sensor else 'false' }}"
+       data-sensor-status="{{ sensor_status }}"
        data-has-photo="{{ 'true' if plant.image_path else 'false' }}">
 
         <div class="card-photo">
@@ -514,8 +514,10 @@
                 {% endif %}
 
                 <!-- Sensors -->
-                {% if has_sensor %}
-                <span class="tag tag-ok" title="Sensor data received">📡</span>
+                {% if sensor_status == 'active' %}
+                <span class="tag tag-ok" title="Sensor active">📡</span>
+                {% elif sensor_status == 'failed' %}
+                <span class="tag tag-danger" title="Sensor offline — no data received recently">📡</span>
                 {% else %}
                 <span class="tag tag-off" title="No sensor data">📡</span>
                 {% endif %}
@@ -592,13 +594,13 @@
         cards.forEach(card => {
             const name   = card.dataset.name   || '';
             const device = card.dataset.device  || '';
-            const hasSensor = card.dataset.hasSensor === 'true';
+            const sensorStatus = card.dataset.sensorStatus || 'no_data';
             const hasPhoto  = card.dataset.hasPhoto  === 'true';
 
             const matchSearch = !q || name.includes(q) || device.includes(q);
             const matchFilter =
                 filter === 'all'      ? true :
-                filter === 'sensor'   ? hasSensor :
+                filter === 'sensor'   ? sensorStatus === 'active' :
                 filter === 'no_photo' ? !hasPhoto :
                 true;
 

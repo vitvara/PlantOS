@@ -55,10 +55,9 @@ def catalog(
     plant_stats: dict = {}
     for plant in plants:
         latest_health = health_service.get_latest(plant.id)
-        sensor_data = dashboard_service.get_dashboard_data(device_id=plant.device_id, limit=1)
         plant_stats[plant.id] = {
             "health_score": latest_health.health_score if latest_health else None,
-            "has_sensors": len(sensor_data.points) > 0,
+            "sensor_status": dashboard_service.get_sensor_status(plant.device_id),
         }
 
     return templates.TemplateResponse("catalog.html", {
@@ -115,6 +114,7 @@ def plant_detail(
 
     dashboard_data = dashboard_service.get_dashboard_data(device_id=plant.device_id, limit=200)
     latest_sensor = dashboard_data.points[-1] if dashboard_data.points else None
+    sensor_status = dashboard_service.get_sensor_status(plant.device_id)
 
     latest_health = health_service.get_latest(plant_id)
 
@@ -123,6 +123,7 @@ def plant_detail(
         "plant": plant,
         "latest": latest_sensor,
         "dashboard_data": dashboard_data,
+        "sensor_status": sensor_status,
         "latest_health": latest_health,
         "error": error,
         "success": success,
