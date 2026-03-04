@@ -4,8 +4,10 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
 from app.api.deps import get_dashboard_service, get_health_service, get_plant_service
+from app.core.database import get_db
 from app.health.exceptions import AnalysisError, TooManyImages
 from app.health.service import PlantHealthService
 from app.plant.exceptions import (
@@ -74,9 +76,14 @@ def register_plant(
     name: str = Form(...),
     device_id: str = Form(...),
     plant_service: PlantService = Depends(get_plant_service),
+    db: Session = Depends(get_db),
 ) -> RedirectResponse:
     try:
         plant = plant_service.create_plant(name=name, device_id=device_id)
+        # Commit BEFORE the 303 redirect — FastAPI yield-dependency cleanup
+        # runs after the response is sent, so the follow-up GET could arrive
+        # before the transaction is committed and see a 404.
+        db.commit()
         return RedirectResponse(
             url=f"/catalog/{plant.id}",
             status_code=status.HTTP_303_SEE_OTHER,
@@ -158,9 +165,11 @@ def sensor_data(
 def delete_plant(
     plant_id: int,
     plant_service: PlantService = Depends(get_plant_service),
+    db: Session = Depends(get_db),
 ) -> RedirectResponse:
     try:
         plant_service.delete_plant(plant_id)
+        db.commit()
         return RedirectResponse(
             url=f"/catalog?{urlencode({'success': 'Plant deleted successfully'})}",
             status_code=status.HTTP_303_SEE_OTHER,
@@ -174,6 +183,7 @@ async def upload_plant_image(
     plant_id: int,
     file: UploadFile = File(...),
     plant_service: PlantService = Depends(get_plant_service),
+    db: Session = Depends(get_db),
 ) -> RedirectResponse:
     try:
         content = await file.read()
@@ -182,6 +192,7 @@ async def upload_plant_image(
             file_bytes=content,
             filename=file.filename,
         )
+        db.commit()
         return RedirectResponse(
             url=f"/catalog/{plant_id}",
             status_code=status.HTTP_303_SEE_OTHER,
@@ -199,9 +210,11 @@ async def upload_plant_image(
 async def identify_species(
     plant_id: int,
     plant_service: PlantService = Depends(get_plant_service),
+    db: Session = Depends(get_db),
 ) -> RedirectResponse:
     try:
         await plant_service.identify_species(plant_id)
+        db.commit()
         return RedirectResponse(
             url=f"/catalog/{plant_id}?{urlencode({'success': 'Species identified successfully'})}",
             status_code=status.HTTP_303_SEE_OTHER,
@@ -252,6 +265,7 @@ async def submit_health_analysis(
     files: List[UploadFile] = File(...),
     plant_service: PlantService = Depends(get_plant_service),
     health_service: PlantHealthService = Depends(get_health_service),
+    db: Session = Depends(get_db),
 ) -> RedirectResponse:
     try:
         plant = plant_service.get_plant(plant_id)
@@ -278,6 +292,7 @@ async def submit_health_analysis(
             filenames=filenames,
             species=plant.species,
         )
+        db.commit()
         return RedirectResponse(
             url=f"/catalog/{plant_id}/health",
             status_code=status.HTTP_303_SEE_OTHER,

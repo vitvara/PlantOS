@@ -1,0 +1,19 @@
+{
+    "name": "PlantOS",
+    "short_name": "PlantOS",
+    "description": "AI-Powered Plant Monitoring",
+    "start_url": "/catalog",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#0c2627",
+    "theme_color": "#0c2627",
+    "icons": [
+        {
+            "src": "/static/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

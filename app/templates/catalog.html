@@ -137,13 +137,18 @@
     position: relative;
 }
 
-.plant-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--border-strong);
-}
+/* Touch feedback: subtle scale on press (works on all devices) */
+.plant-card:active { transform: scale(0.98); }
 
-.plant-card:active { transform: translateY(-1px); }
+/* Lift effect only on real pointer devices — prevents stuck hover on iOS */
+@media (hover: hover) {
+    .plant-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--border-strong);
+    }
+    .plant-card:active { transform: translateY(-1px); }
+}
 
 /* Photo zone */
 .card-photo {
@@ -165,7 +170,9 @@
     transition: transform 0.3s ease;
 }
 
-.plant-card:hover .card-photo img { transform: scale(1.04); }
+@media (hover: hover) {
+    .plant-card:hover .card-photo img { transform: scale(1.04); }
+}
 
 .card-photo .ph-icon {
     font-size: 3.5rem;

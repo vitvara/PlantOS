@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c2627">
     <title>{{ title if title else "PlantOS" }}</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <link rel="manifest" href="/static/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PlantOS">
@@ -65,8 +67,32 @@
     }
 
     /* ─── Reset & Base ──────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        /* Remove iOS blue tap flash on all elements */
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Only enable smooth scroll when user hasn't requested reduced motion */
+    @media (prefers-reduced-motion: no-preference) {
+        html { scroll-behavior: smooth; }
+    }
+
+    /* touch-action: manipulation prevents 300ms delay & double-tap zoom on iOS */
+    a, button, [role="button"], input, select, textarea, label, summary {
+        touch-action: manipulation;
+    }
+
+    /* Kill all animations/transitions for users who prefer reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
 
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -82,12 +108,26 @@
 
     @media (max-width: 768px) {
         body { padding-bottom: calc(var(--mob-nav-h) + env(safe-area-inset-bottom, 0px)); }
-        /* iOS PWA: html layer shows in safe-area & rubber-band zones; match bottom nav */
+        /* iOS PWA: html background shows in safe-area & rubber-band zones */
         html { background-color: var(--header-bg); }
     }
 
     img { display: block; max-width: 100%; }
     a   { color: inherit; }
+
+    /* ─── iOS input zoom prevention ─────────────────────────── */
+    /* iOS zooms the viewport when focusing an input < 16px font-size.
+       max(16px, 1em) keeps the visual size while satisfying the 16px minimum. */
+    @media (max-width: 768px) {
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="search"],
+        select,
+        textarea {
+            font-size: max(16px, 1em) !important;
+        }
+    }
 
     /* ─── Header ────────────────────────────────────────────── */
     header {
@@ -101,6 +141,10 @@
         z-index: 200;
         border-bottom: 1px solid rgba(255,255,255,0.06);
         gap: 1rem;
+        /* GPU-composite the sticky header for smooth iOS scroll */
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        will-change: transform;
     }
 
     .brand {
@@ -170,6 +214,10 @@
         50%       { opacity: 0.3; }
     }
 
+    @media (prefers-reduced-motion: reduce) {
+        .status-dot { animation: none; }
+    }
+
     .status-label {
         font-size: 0.72rem;
         color: #64748b;
@@ -197,7 +245,10 @@
         gap: 0.4rem;
     }
 
-    .desktop-nav a:hover  { color: #e2e8f0; }
+    @media (hover: hover) {
+        .desktop-nav a:hover { color: #e2e8f0; }
+    }
+
     .desktop-nav a.active { color: #fff; border-bottom-color: #73ba79; }
 
     /* ─── Mobile Bottom Navigation ─────────────────────────── */
@@ -215,6 +266,8 @@
         justify-content: space-around;
         align-items: flex-start;
         padding-top: 8px;
+        /* Prevent background scroll-through on iOS */
+        overscroll-behavior: none;
     }
 
     @media (max-width: 768px) {
@@ -250,6 +303,7 @@
         justify-content: center;
         transition: transform 0.15s;
     }
+
     .mobile-nav a.active .nav-icon { transform: scale(1.1); }
 
     /* FAB add button */
@@ -268,12 +322,14 @@
         display: flex !important;
         flex-direction: row !important;
         font-size: 0 !important;
+        flex-shrink: 0;
     }
 
     .mob-fab .nav-icon {
-        font-size: 1.4rem !important;
+        font-size: 1.5rem !important;
         transform: none !important;
         color: white;
+        line-height: 1;
     }
 
     /* ─── Main Layout ───────────────────────────────────────── */
@@ -335,6 +391,9 @@
         color: var(--text-1);
         transition: border-color 0.15s, box-shadow 0.15s;
         width: 100%;
+        /* Normalize appearance across iOS/Android */
+        -webkit-appearance: none;
+        appearance: none;
     }
 
     input[type="text"]:focus,
@@ -370,27 +429,31 @@
         white-space: nowrap;
         min-height: 40px;
         user-select: none;
+        -webkit-user-select: none;
     }
 
-    .btn:active { transform: scale(0.98); }
+    .btn:active { transform: scale(0.97); }
 
     .btn-green { background: var(--green); color: #fff; }
-    .btn-green:hover { background: var(--green-hover); box-shadow: 0 2px 10px rgba(22,163,74,0.35); }
-
-    .btn-blue  { background: var(--blue); color: #fff; }
-    .btn-blue:hover { background: var(--blue-hover); box-shadow: 0 2px 10px rgba(37,99,235,0.35); }
-
+    .btn-blue  { background: var(--blue);  color: #fff; }
     .btn-ghost {
         background: var(--surface);
         color: var(--text-2);
         border: 1.5px solid var(--border);
     }
-    .btn-ghost:hover { background: var(--bg); border-color: var(--border-strong); }
+
+    /* Hover effects only on pointer devices — prevents stuck hover on iOS */
+    @media (hover: hover) {
+        .btn-green:hover { background: var(--green-hover); box-shadow: 0 2px 10px rgba(22,163,74,0.35); }
+        .btn-blue:hover  { background: var(--blue-hover);  box-shadow: 0 2px 10px rgba(37,99,235,0.35); }
+        .btn-ghost:hover { background: var(--bg); border-color: var(--border-strong); }
+    }
 
     .btn-sm  { padding: 0.4rem 0.875rem; font-size: 0.8rem;  min-height: 34px; }
     .btn-lg  { padding: 0.75rem 1.5rem;  font-size: 0.95rem; min-height: 48px; }
     .btn-full { width: 100%; }
 
+    /* iOS: 44px min touch target (Apple HIG recommendation) */
     @media (max-width: 768px) {
         .btn    { min-height: 44px; }
         .btn-sm { min-height: 40px; }
@@ -424,7 +487,9 @@
         flex-wrap: wrap;
     }
     .breadcrumb a     { color: var(--text-2); text-decoration: none; transition: color 0.15s; }
-    .breadcrumb a:hover { color: var(--text-1); }
+    @media (hover: hover) {
+        .breadcrumb a:hover { color: var(--text-1); }
+    }
     .breadcrumb .sep  { color: var(--border-strong); }
 
     /* ─── Section header ────────────────────────────────────── */
@@ -495,12 +560,14 @@
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.5);
+        background: rgba(15, 23, 42, 0.55);
         z-index: 900;
         align-items: center;
         justify-content: center;
         backdrop-filter: blur(3px);
         -webkit-backdrop-filter: blur(3px);
+        /* Prevent scroll-through on iOS when overlay is active */
+        overscroll-behavior: none;
     }
     #g-loading.active { display: flex; }
 
@@ -540,9 +607,6 @@
     }
     </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -558,7 +622,7 @@
     <span class="header-pill">v1.0</span>
     <div class="header-right">
         <div class="status-indicator">
-            <div class="status-dot"></div>
+            <div class="status-dot" aria-hidden="true"></div>
             <span class="status-label">Online</span>
         </div>
     </div>
@@ -587,9 +651,9 @@
         Catalog
     </a>
     <a href="/catalog?add=1" class="mob-fab" aria-label="Add plant">
-        <span class="nav-icon">＋</span>
+        <span class="nav-icon">+</span>
     </a>
-    <a href="/catalog" style="opacity:0.35; pointer-events:none;" aria-hidden="true">
+    <a href="/catalog" style="opacity:0.35; pointer-events:none;" aria-hidden="true" tabindex="-1">
         <span class="nav-icon">📊</span>
         Stats
     </a>
@@ -605,6 +669,33 @@
 </div>
 
 <script>
+    // ── iOS-safe scroll lock / unlock ───────────────────────── //
+    // Standard overflow:hidden doesn't stop scroll on iOS.
+    // Fix: position:fixed + restore scrollY on unlock.
+    let _scrollY = 0;
+
+    function lockScroll() {
+        _scrollY = window.scrollY;
+        Object.assign(document.body.style, {
+            overflow: 'hidden',
+            position: 'fixed',
+            top: `-${_scrollY}px`,
+            left: '0',
+            right: '0',
+        });
+    }
+
+    function unlockScroll() {
+        Object.assign(document.body.style, {
+            overflow: '',
+            position: '',
+            top: '',
+            left: '',
+            right: '',
+        });
+        window.scrollTo(0, _scrollY);
+    }
+
     // ── Global loading helpers ──────────────────────────────── //
     function showLoading(msg, sub) {
         document.getElementById('g-loading-msg').textContent = msg || 'Processing…';
@@ -612,8 +703,18 @@
         document.getElementById('g-loading').classList.add('active');
     }
 
+    function hideLoading() {
+        document.getElementById('g-loading').classList.remove('active');
+    }
+
+    // ── iOS BFCache fix ─────────────────────────────────────── //
+    // On iOS, pressing Back restores the page from cache (BFCache).
+    // Without this, the loading overlay stays visible after back-navigation.
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) hideLoading();
+    });
+
     // ── Strip _t cache-buster from URL bar after load ──────── //
-    // Keeps the address bar clean after forced navigations
     (function () {
         const u = new URL(window.location.href);
         if (u.searchParams.has('_t')) {

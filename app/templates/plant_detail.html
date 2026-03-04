@@ -620,7 +620,7 @@
     <div class="photo-panel">
         <div class="photo-zone">
             {% if plant.image_path %}
-                <img src="/media/{{ plant.image_path }}" alt="{{ plant.name }}">
+                <img src="/media/{{ plant.image_path }}" alt="{{ plant.name }}" loading="lazy">
             {% else %}
                 <span class="ph-icon">🌿</span>
             {% endif %}
@@ -925,6 +925,8 @@
 
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
     // ── Delete modal ─────────────────────────────────────── //
     const PLANT_NAME = {{ plant.name | tojson }};
@@ -932,6 +934,7 @@
     function openDeleteModal() {
         const modal = document.getElementById('delete-modal');
         modal.classList.add('open');
+        lockScroll(); // Prevent background scroll on iOS
         // Reset state each open
         const input = document.getElementById('confirm-input');
         input.value = '';
@@ -942,6 +945,7 @@
 
     function closeDeleteModal() {
         document.getElementById('delete-modal').classList.remove('open');
+        unlockScroll();
     }
 
     function handleBackdropClick(e) {

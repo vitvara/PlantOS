@@ -490,13 +490,15 @@
 
 {% block scripts %}
 <script>
-    // Lightbox
+    // Lightbox — with iOS scroll lock so background doesn't scroll through
     function openLightbox(src) {
         document.getElementById('lightbox-img').src = src;
         document.getElementById('lightbox').classList.add('open');
+        lockScroll();
     }
     function closeLightbox() {
         document.getElementById('lightbox').classList.remove('open');
+        unlockScroll();
     }
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeLightbox();
