@@ -374,7 +374,7 @@
             {% if log.health_score >= 70 %}{% set bc = "#22c55e" %}
             {% elif log.health_score >= 50 %}{% set bc = "#eab308" %}
             {% else %}{% set bc = "#ef4444" %}{% endif %}
-            <div class="trend-bar" style="height:{{ h | max(4) }}px;background:{{ bc }};" title="{{ log.created_at.strftime('%b %d') }}: {{ log.health_score }}"></div>
+            <div class="trend-bar" style="height:{{ h if h > 4 else 4 }}px;background:{{ bc }};" title="{{ log.created_at.strftime('%b %d') }}: {{ log.health_score }}"></div>
             {% endfor %}
         </div>
         {% endif %}
@@ -502,11 +502,14 @@
         if (e.key === 'Escape') closeLightbox();
     });
 
-    // Analyze loading state
-    document.getElementById('analyze-form').addEventListener('submit', function() {
-        const btn = document.getElementById('analyze-btn');
-        btn.textContent = '⏳ Analyzing…';
-        btn.classList.add('loading');
+    // ── Health analyze — fetch + forced fresh reload ──────── //
+    document.getElementById('analyze-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        showLoading('Analysing plant health…', 'AI is reviewing your photos — please wait');
+        try {
+            await fetch(this.action, { method: 'POST', body: new FormData(this) });
+        } catch (_) { /* network error — still reload to surface server message */ }
+        window.location.replace(window.location.pathname + '?_t=' + Date.now());
     });
 </script>
 {% endblock %}

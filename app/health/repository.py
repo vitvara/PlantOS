@@ -52,3 +52,8 @@ class HealthLogRepository:
             .limit(1)
         )
         return self.db.execute(stmt).scalars().first()
+
+    def delete_all_by_plant(self, plant_id: int) -> None:
+        for log in self.get_by_plant(plant_id):
+            self.db.delete(log)
+        self.db.flush()

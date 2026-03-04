@@ -7,13 +7,15 @@ An AI-powered IoT plant monitoring platform. Connect ESP32 sensor devices to you
 ![SQLite](https://img.shields.io/badge/SQLite-3-lightgrey?style=flat-square&logo=sqlite)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991?style=flat-square&logo=openai)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)
+![Tests](https://img.shields.io/badge/tests-128%20passed-brightgreen?style=flat-square&logo=pytest)
+![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen?style=flat-square)
 
 ---
 
 ## Features
 
 | Feature | Description |
-|---|---|
+|---|---
 | 🌿 **Plant Catalog** | Register and manage all your plants with profile photos |
 | 📡 **Sensor Ingestion** | Receive temperature, humidity & soil moisture from ESP32 devices |
 | 📊 **Live Dashboard** | Real-time sensor readings with time-series charts |
@@ -229,16 +231,51 @@ Interactive API docs are available at `/docs` (Swagger UI) and `/redoc`.
 
 ---
 
+## Tests
+
+Run the test suite:
+
+```bash
+uv run pytest tests/ --cov=app --cov-report=term-missing
+```
+
+**128 tests · 95% coverage**
+
+| Module | Stmts | Miss | Cover |
+|---|---|---|---|
+| `app/api/deps.py` | 17 | 0 | **100%** |
+| `app/api/router.py` | 10 | 0 | **100%** |
+| `app/core/config.py` | 15 | 0 | **100%** |
+| `app/core/database.py` | 28 | 9 | 68% |
+| `app/health/repository.py` | 22 | 0 | **100%** |
+| `app/health/routes.py` | 30 | 17 | 43% |
+| `app/health/service.py` | 65 | 1 | 98% |
+| `app/ingestion/repository.py` | 15 | 0 | **100%** |
+| `app/ingestion/routes.py` | 14 | 0 | **100%** |
+| `app/ingestion/service.py` | 21 | 0 | **100%** |
+| `app/lifespan.py` | 19 | 1 | 95% |
+| `app/main.py` | 27 | 0 | **100%** |
+| `app/plant/repository.py` | 40 | 0 | **100%** |
+| `app/plant/routes.py` | 41 | 2 | 95% |
+| `app/plant/service.py` | 89 | 3 | 97% |
+| `app/ui/repository.py` | 20 | 0 | **100%** |
+| `app/ui/routes.py` | 108 | 1 | 99% |
+| `app/ui/service.py` | 30 | 0 | **100%** |
+| **TOTAL** | **721** | **34** | **95%** |
+
+---
+
 ## Roadmap / TODO
 
 ### 🧪 Tests
-- [ ] Set up `pytest` with `httpx` async test client
-- [ ] Unit tests for `PlantService` — create, delete, identify species
-- [ ] Unit tests for `HealthService` — analyze, health scoring thresholds
-- [ ] Integration tests for `POST /api/ingest` (valid key, invalid key, missing fields)
-- [ ] Integration tests for plant registration and delete flow
-- [ ] Template rendering smoke tests (check context keys render without error)
-- [ ] Mock OpenAI responses in tests to avoid API costs and flakiness
+- [x] Set up `pytest` with `httpx` test client — 128 tests, 95% coverage
+- [x] Unit tests for `PlantService` — create, delete, identify species
+- [x] Unit tests for `HealthService` — analyze, health scoring thresholds
+- [x] Integration tests for `POST /api/ingest` (valid key, invalid key, missing fields)
+- [x] Integration tests for plant registration and delete flow
+- [x] Template rendering smoke tests (context keys render without error)
+- [x] Mock OpenAI responses in tests to avoid API costs and flakiness
+- [ ] GitHub Actions CI — run tests automatically on every PR
 
 ### 🔒 Security
 - [ ] Per-device API keys stored in DB (replace shared `supersecretkey`)

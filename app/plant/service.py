@@ -93,7 +93,8 @@ class PlantService:
             for img_path in (log.image_paths or []):
                 files_to_remove.append(os.path.join(settings.MEDIA_ROOT, img_path))
 
-        # Delete from DB (cascade removes health logs)
+        # Explicitly delete health logs first, then the plant
+        health_repo.delete_all_by_plant(plant_id)
         self.repo.delete(plant)
 
         # Clean up files silently

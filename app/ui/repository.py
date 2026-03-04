@@ -37,6 +37,25 @@ class SensorQueryRepository:
         # Reverse for chronological display (oldest → newest)
         return list(reversed(rows))
 
+    def get_timeseries_since(
+        self,
+        device_id: str,
+        since: datetime,
+        limit: int = 3000,
+    ) -> List[SensorData]:
+        """
+        Retrieve sensor records for a device from `since` onwards (ASC order).
+        Used for time-proportional chart rendering.
+        """
+        stmt = (
+            select(SensorData)
+            .where(SensorData.device_id == device_id)
+            .where(SensorData.created_at >= since)
+            .order_by(SensorData.created_at.asc())
+            .limit(limit)
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
     def get_distinct_devices(self) -> List[str]:
         """
         Retrieve available device IDs.

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.engine import Engine
 
@@ -25,12 +25,20 @@ def create_db_engine() -> Engine:
     while remaining production-ready for Postgres.
     """
     if settings.database_url.startswith("sqlite"):
-        return create_engine(
+        eng = create_engine(
             settings.database_url,
             connect_args={"check_same_thread": False},
             future=True,
             pool_pre_ping=True,
         )
+
+        @event.listens_for(eng, "connect")
+        def _set_sqlite_pragma(dbapi_conn, _record):
+            cursor = dbapi_conn.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+
+        return eng
 
     # For Postgres / MySQL later
     return create_engine(

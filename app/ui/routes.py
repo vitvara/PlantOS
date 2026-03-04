@@ -2,7 +2,7 @@ from typing import List, Optional
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api.deps import get_dashboard_service, get_health_service, get_plant_service
@@ -107,7 +107,7 @@ def plant_detail(
         raise HTTPException(status_code=404, detail="Plant not found")
 
     dashboard_data = dashboard_service.get_dashboard_data(device_id=plant.device_id, limit=200)
-    latest_sensor = dashboard_data.points[0] if dashboard_data.points else None
+    latest_sensor = dashboard_data.points[-1] if dashboard_data.points else None
 
     latest_health = health_service.get_latest(plant_id)
 
@@ -119,6 +119,38 @@ def plant_detail(
         "latest_health": latest_health,
         "error": error,
         "success": success,
+    })
+
+
+@router.get("/catalog/{plant_id}/sensor-data")
+def sensor_data(
+    plant_id: int,
+    hours: float = Query(24.0, ge=0.5, le=168.0),
+    plant_service: PlantService = Depends(get_plant_service),
+    dashboard_service: DashboardService = Depends(get_dashboard_service),
+) -> JSONResponse:
+    try:
+        plant = plant_service.get_plant(plant_id)
+    except PlantNotFound:
+        raise HTTPException(status_code=404, detail="Plant not found")
+
+    data = dashboard_service.get_sensor_history_for_hours(
+        device_id=plant.device_id,
+        hours=hours,
+    )
+    return JSONResponse({
+        "device_id": data.device_id,
+        "hours": hours,
+        "count": len(data.points),
+        "points": [
+            {
+                "t": p.timestamp.isoformat(),
+                "temp": p.temperature,
+                "hum": p.humidity,
+                "soil": p.soil_moisture,
+            }
+            for p in data.points
+        ],
     })
 
 

@@ -476,9 +476,59 @@
     /* ─── Utility ───────────────────────────────────────────── */
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
     .mono { font-family: 'SF Mono', ui-monospace, monospace; }
+
+    /* ─── Global Loading Overlay ────────────────────────────── */
+    #g-loading {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        z-index: 900;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+    }
+    #g-loading.active { display: flex; }
+
+    #g-loading-box {
+        background: var(--surface);
+        border-radius: var(--r-xl);
+        padding: 2rem 2.5rem;
+        text-align: center;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border);
+        min-width: 200px;
+    }
+
+    .g-spinner {
+        width: 38px;
+        height: 38px;
+        border: 3px solid var(--green-100);
+        border-top-color: var(--green);
+        border-radius: 50%;
+        animation: g-spin 0.65s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes g-spin { to { transform: rotate(360deg); } }
+
+    #g-loading-msg {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-2);
+        margin: 0;
+    }
+
+    #g-loading-sub {
+        font-size: 0.75rem;
+        color: var(--text-3);
+        margin: 0.3rem 0 0;
+    }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
     {% block head %}{% endblock %}
 </head>
@@ -529,6 +579,34 @@
         Stats
     </a>
 </nav>
+
+<!-- ── Global Loading Overlay ─────────────────────────── -->
+<div id="g-loading" role="status" aria-live="polite" aria-label="Loading">
+    <div id="g-loading-box">
+        <div class="g-spinner"></div>
+        <p id="g-loading-msg">Processing…</p>
+        <p id="g-loading-sub">This may take a moment</p>
+    </div>
+</div>
+
+<script>
+    // ── Global loading helpers ──────────────────────────────── //
+    function showLoading(msg, sub) {
+        document.getElementById('g-loading-msg').textContent = msg || 'Processing…';
+        document.getElementById('g-loading-sub').textContent = sub || 'This may take a moment';
+        document.getElementById('g-loading').classList.add('active');
+    }
+
+    // ── Strip _t cache-buster from URL bar after load ──────── //
+    // Keeps the address bar clean after forced navigations
+    (function () {
+        const u = new URL(window.location.href);
+        if (u.searchParams.has('_t')) {
+            u.searchParams.delete('_t');
+            history.replaceState(null, '', u.toString());
+        }
+    })();
+</script>
 
 {% block scripts %}{% endblock %}
 </body>

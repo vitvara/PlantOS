@@ -394,7 +394,18 @@
 
 .care-item.full { grid-column: 1 / -1; }
 
-/* ─── Actions Card ───────────────────────────────────────── */
+/* ─── Header Actions Bar ─────────────────────────────────── */
+.hd-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    align-items: center;
+}
+
+/* ─── Actions Card (delete only) ────────────────────────── */
 .actions-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -550,6 +561,39 @@
     box-shadow: var(--shadow-sm);
     margin-top: 1.25rem;
 }
+
+/* ─── Time range selector ────────────────────────────────── */
+.chart-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.875rem;
+}
+
+.range-bar {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.range-btn {
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--r-xs);
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.range-btn:hover  { border-color: var(--green); color: var(--green); }
+.range-btn.active { background: var(--green-50); border-color: var(--green); color: var(--green); }
 </style>
 {% endblock %}
 
@@ -670,6 +714,27 @@
                 {% else %}
                 <span class="chip chip-gray" title="No health check done">❤ No Analysis</span>
                 {% endif %}
+            </div>
+
+            <!-- Quick actions (below feature bar, inside header card) -->
+            <div class="hd-actions">
+                <a href="/catalog/{{ plant.id }}/health" class="btn btn-green btn-sm">
+                    🔍 Health Analysis
+                </a>
+
+                {% if plant.image_path %}
+                <form action="/catalog/{{ plant.id }}/identify-species" method="post" id="species-form">
+                    <button type="submit" class="btn btn-blue btn-sm btn-identify" id="species-btn">
+                        🔬 {{ 'Re-identify Species' if plant.species else 'Identify Species' }}
+                    </button>
+                </form>
+                {% else %}
+                <span class="btn btn-ghost btn-sm" style="opacity:0.45;cursor:not-allowed;" title="Upload a photo first">
+                    🔬 Identify Species
+                </span>
+                {% endif %}
+
+                <a href="/catalog" class="btn btn-ghost btn-sm">← Catalog</a>
             </div>
         </div>
 
@@ -793,27 +858,9 @@
         </div>
         {% endif %}
 
-        <!-- Actions -->
+        <!-- Delete action -->
         <div class="actions-card">
-            <a href="/catalog/{{ plant.id }}/health" class="btn btn-green">
-                🔍 Health Analysis
-            </a>
-
-            {% if plant.image_path %}
-            <form action="/catalog/{{ plant.id }}/identify-species" method="post" id="species-form">
-                <button type="submit" class="btn btn-blue btn-identify" id="species-btn">
-                    🔬 {{ 'Re-identify Species' if plant.species else 'Identify Species' }}
-                </button>
-            </form>
-            {% else %}
-            <span class="btn btn-ghost" style="opacity:0.45;cursor:not-allowed;" title="Upload a photo first">
-                🔬 Identify Species
-            </span>
-            {% endif %}
-
-            <a href="/catalog" class="btn btn-ghost">← Catalog</a>
-
-            <button class="btn btn-danger" style="margin-left:auto;"
+            <button class="btn btn-danger"
                     onclick="openDeleteModal()">
                 🗑 Delete Plant
             </button>
@@ -854,15 +901,24 @@
 
 <!-- ── Sensor History Chart ────────────────────────────── -->
 <div class="chart-card">
-    <p class="card-hd" style="margin-bottom:0.75rem;">Sensor History — <span class="mono" style="font-size:0.8rem;text-transform:none;letter-spacing:0;">{{ plant.device_id }}</span></p>
-    {% if dashboard_data and dashboard_data.points %}
-    <canvas id="sensorChart" style="max-height:280px"></canvas>
-    {% else %}
-    <div style="text-align:center;color:var(--text-3);padding:2.5rem 0;font-size:0.9rem;">
-        <span style="font-size:2rem;display:block;margin-bottom:0.5rem;">📊</span>
-        No sensor history yet for this device.
+    <div class="chart-hd">
+        <p class="card-hd" style="margin:0;">Sensor History — <span class="mono" style="font-size:0.8rem;text-transform:none;letter-spacing:0;">{{ plant.device_id }}</span></p>
+        <div class="range-bar" id="range-bar">
+            <button class="range-btn" data-hours="0.5"  onclick="loadRange(0.5)">30m</button>
+            <button class="range-btn" data-hours="1"    onclick="loadRange(1)">1h</button>
+            <button class="range-btn" data-hours="6"    onclick="loadRange(6)">6h</button>
+            <button class="range-btn" data-hours="12"   onclick="loadRange(12)">12h</button>
+            <button class="range-btn active" data-hours="24" onclick="loadRange(24)">24h</button>
+            <button class="range-btn" data-hours="48"   onclick="loadRange(48)">2d</button>
+            <button class="range-btn" data-hours="72"   onclick="loadRange(72)">3d</button>
+            <button class="range-btn" data-hours="168"  onclick="loadRange(168)">7d</button>
+        </div>
     </div>
-    {% endif %}
+    <canvas id="sensorChart" style="max-height:280px;display:none;"></canvas>
+    <div id="chart-empty" style="text-align:center;color:var(--text-3);padding:2.5rem 0;font-size:0.9rem;">
+        <span style="font-size:2rem;display:block;margin-bottom:0.5rem;">📊</span>
+        No sensor data in this time range.
+    </div>
 </div>
 
 {% endblock %}
@@ -913,80 +969,112 @@
         body.style.display = card.classList.contains('collapsed') ? 'none' : '';
     }
 
-    // Identify species loading state
+    // ── Identify species — fetch + forced fresh reload ────── //
     const speciesForm = document.getElementById('species-form');
     if (speciesForm) {
-        speciesForm.addEventListener('submit', function() {
-            const btn = document.getElementById('species-btn');
-            btn.textContent = '⏳ Identifying…';
-            btn.classList.add('loading');
+        speciesForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            showLoading('Identifying species…', 'AI is analysing your plant photo');
+            try {
+                await fetch(this.action, { method: 'POST' });
+            } catch (_) { /* network error — still reload to show server error */ }
+            // Timestamp busts any proxy/browser cache on the GET
+            window.location.replace(window.location.pathname + '?_t=' + Date.now());
+        });
+    }
+
+    // ── Photo upload — fetch + forced fresh reload ─────────── //
+    const uploadForm = document.querySelector('.upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type=submit]');
+            if (btn) { btn.textContent = '⏳ Uploading…'; btn.disabled = true; }
+            try {
+                await fetch(this.action, { method: 'POST', body: new FormData(this) });
+            } catch (_) {}
+            window.location.replace(window.location.pathname + '?_t=' + Date.now());
         });
     }
 </script>
 
-{% if dashboard_data and dashboard_data.points %}
 <script>
-const ctx = document.getElementById('sensorChart').getContext('2d');
-const labels = [{% for p in dashboard_data.points %}"{{ p.timestamp.strftime('%m-%d %H:%M') }}",{% endfor %}];
-const tempData  = [{% for p in dashboard_data.points %}{{ p.temperature if p.temperature is not none else 'null' }},{% endfor %}];
-const humData   = [{% for p in dashboard_data.points %}{{ p.humidity if p.humidity is not none else 'null' }},{% endfor %}];
-const soilData  = [{% for p in dashboard_data.points %}{{ p.soil_moisture if p.soil_moisture is not none else 'null' }},{% endfor %}];
+// ── Sensor history chart with real-time X axis ─────────── //
+let _chart = null;
 
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels,
-        datasets: [
-            {
-                label: 'Temp (°C)',
-                data: tempData,
-                borderColor: '#f97316',
-                backgroundColor: 'rgba(249,115,22,0.07)',
-                borderWidth: 2,
-                tension: 0.4,
-                pointRadius: 0,
-                fill: true,
-            },
-            {
-                label: 'Humidity (%)',
-                data: humData,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59,130,246,0.06)',
-                borderWidth: 2,
-                tension: 0.4,
-                pointRadius: 0,
-                fill: true,
-            },
-            {
-                label: 'Soil (%)',
-                data: soilData,
-                borderColor: '#16a34a',
-                backgroundColor: 'rgba(22,163,74,0.07)',
-                borderWidth: 2,
-                tension: 0.4,
-                pointRadius: 0,
-                fill: true,
-            },
-        ],
-    },
-    options: {
-        responsive: true,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: { position: 'top', labels: { font: { family: 'Inter', size: 12 }, usePointStyle: true, pointStyleWidth: 8 } },
+function loadRange(hours) {
+    // Update active button
+    document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.dataset.hours) === hours);
+    });
+
+    fetch(`/catalog/{{ plant.id }}/sensor-data?hours=${hours}`)
+        .then(r => r.json())
+        .then(renderChart)
+        .catch(() => { /* silently keep previous state on network error */ });
+}
+
+function renderChart(data) {
+    const canvas = document.getElementById('sensorChart');
+    const empty  = document.getElementById('chart-empty');
+
+    if (!data.points || !data.points.length) {
+        canvas.style.display = 'none';
+        empty.style.display  = 'block';
+        if (_chart) { _chart.destroy(); _chart = null; }
+        return;
+    }
+
+    canvas.style.display = 'block';
+    empty.style.display  = 'none';
+
+    const tempData = data.points.map(p => ({ x: p.t, y: p.temp  }));
+    const humData  = data.points.map(p => ({ x: p.t, y: p.hum   }));
+    const soilData = data.points.map(p => ({ x: p.t, y: p.soil  }));
+
+    if (_chart) {
+        _chart.data.datasets[0].data = tempData;
+        _chart.data.datasets[1].data = humData;
+        _chart.data.datasets[2].data = soilData;
+        _chart.update('none');
+        return;
+    }
+
+    _chart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            datasets: [
+                { label: 'Temp (°C)',    data: tempData,  borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.07)', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true },
+                { label: 'Humidity (%)', data: humData,   borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.06)',  borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true },
+                { label: 'Soil (%)',     data: soilData,  borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.07)',   borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true },
+            ],
         },
-        scales: {
-            x: {
-                ticks: { maxTicksLimit: 8, font: { size: 11 }, color: '#94a3b8' },
-                grid: { color: '#f1f5f9' },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { font: { family: 'Inter', size: 12 }, usePointStyle: true, pointStyleWidth: 8 } },
             },
-            y: {
-                ticks: { font: { size: 11 }, color: '#94a3b8' },
-                grid: { color: '#f1f5f9' },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        tooltipFormat: 'MMM d, HH:mm',
+                        displayFormats: { minute: 'HH:mm', hour: 'MMM d HH:mm', day: 'MMM d', week: 'MMM d' },
+                    },
+                    ticks: { maxTicksLimit: 8, font: { size: 11 }, color: '#94a3b8' },
+                    grid: { color: '#f1f5f9' },
+                },
+                y: {
+                    ticks: { font: { size: 11 }, color: '#94a3b8' },
+                    grid: { color: '#f1f5f9' },
+                },
             },
         },
-    },
-});
+    });
+}
+
+// Load default 24h range on page load
+loadRange(24);
 </script>
-{% endif %}
 {% endblock %}
